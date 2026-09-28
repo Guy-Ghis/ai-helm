@@ -1,0 +1,256 @@
+<mxfile host="app.diagrams.net" pages="2">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       PAGE 1 — Lightbridge Deployment Structure
+       Shows: lightbridge chart → 3 static Application CRs → workloads
+       ══════════════════════════════════════════════════════════════════════ -->
+  <diagram name="lightbridge-gitops-structure" id="LB-GITOPS">
+    <mxGraphModel dx="2000" dy="1400" grid="1" gridSize="10" guides="1"
+                  tooltips="1" connect="1" arrows="1" fold="1" page="1"
+                  pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="title" value="&lt;b style='font-size:16px'&gt;Lightbridge — GitOps Deployment Structure&lt;/b&gt;&lt;br&gt;charts/lightbridge (orchestrator) → 3 static Application CRs"
+                style="text;html=1;align=center;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="800" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ ai-helm repo ══ -->
+        <mxCell id="repo-box" value="&lt;b&gt;ai-helm (this repo)&lt;/b&gt;"
+                style="swimlane;startSize=28;fillColor=#EDE7F6;strokeColor=#4527A0;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="30" y="90" width="360" height="560" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="orch" value="&lt;b&gt;charts/lightbridge/&lt;/b&gt;&lt;br&gt;Orchestrator (App-of-Apps, NOT ApplicationSet)&lt;br&gt;Renders 3 static Application CRs&lt;br&gt;&lt;font color='#6A1B9A'&gt;templates/applications.yaml&lt;/font&gt;"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" vertex="1" parent="repo-box">
+          <mxGeometry x="20" y="40" width="320" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leaf-sec" value="&lt;b&gt;charts/lightbridge-secrets/&lt;/b&gt;&lt;br&gt;values.yaml → ExternalSecrets:&lt;br&gt;lightbridge-api-client / opa-secret&lt;br&gt;lightbridge-cnpg-s3 / redis-ha-redis-auth"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;" vertex="1" parent="repo-box">
+          <mxGeometry x="20" y="155" width="320" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leaf-db" value="&lt;b&gt;charts/lightbridge-db/&lt;/b&gt;&lt;br&gt;values.yaml (raw YAML strings):&lt;br&gt;Cluster lightbridge-main-db (2 instances, 5Gi)&lt;br&gt;ObjectStore (Hetzner, 7d, jobs:1, gzip)&lt;br&gt;ScheduledBackup (every 6h) + PodMonitor"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="repo-box">
+          <mxGeometry x="20" y="265" width="320" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leaf-app" value="&lt;b&gt;charts/lightbridge/ app child&lt;/b&gt;&lt;br&gt;Upstream chart: lightbridge-authz-stack&lt;br&gt;Pinned at 0.8.1 (NOT floated)&lt;br&gt;Image floats via argocd-image-updater&lt;br&gt;Source B: kustomize overlay (TLS certs)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;" vertex="1" parent="repo-box">
+          <mxGeometry x="20" y="395" width="320" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e-orch-sec" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="repo-box" source="orch" target="leaf-sec"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-orch-db" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="repo-box" source="orch" target="leaf-db"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-orch-app" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="repo-box" source="orch" target="leaf-app"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ══ OCI Registry ══ -->
+        <mxCell id="oci" value="&lt;b&gt;OCI Registry&lt;/b&gt;&lt;br&gt;oci://ghcr.io/adorsys-gis/charts&lt;br&gt;lightbridge-secrets / lightbridge-db → &gt;=0.0.0 (float)&lt;br&gt;lightbridge-authz-stack → pinned 0.8.1"
+                style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E8EAF6;strokeColor=#3949AB;" vertex="1" parent="1">
+          <mxGeometry x="480" y="130" width="240" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ ai-helm-values ══ -->
+        <mxCell id="values-repo" value="&lt;b&gt;ai-helm-values (private)&lt;/b&gt;&lt;br&gt;environments/prod/values/lightbridge-app.yaml&lt;br&gt;(image tags, resource limits, ingress hostnames)&lt;br&gt;environments/prod/deps/lightbridge-backend&lt;br&gt;(kustomize overlay — TLS Certificates)"
+                style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFF8E1;strokeColor=#F57F17;" vertex="1" parent="1">
+          <mxGeometry x="480" y="270" width="240" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ ArgoCD ══ -->
+        <mxCell id="argocd-box" value="&lt;b&gt;ArgoCD — admin@homeos cluster&lt;/b&gt;&lt;br&gt;namespace: argocd / project: ai"
+                style="swimlane;startSize=28;fillColor=#E8F5E9;strokeColor=#2E7D32;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="810" y="90" width="380" height="330" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="app-lbs" value="&lt;b&gt;Application: lightbridge-secrets&lt;/b&gt;&lt;br&gt;wave 0 — chart floated &gt;=0.0.0"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=10;" vertex="1" parent="argocd-box">
+          <mxGeometry x="20" y="50" width="340" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="app-lbd" value="&lt;b&gt;Application: lightbridge-db&lt;/b&gt;&lt;br&gt;wave 1 — chart floated &gt;=0.0.0&lt;br&gt;ignoreDifferences: CNPG Cluster / manager"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=10;" vertex="1" parent="argocd-box">
+          <mxGeometry x="20" y="130" width="340" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="app-lba" value="&lt;b&gt;Application: lightbridge-app&lt;/b&gt;&lt;br&gt;wave 2 — PINNED 0.8.1&lt;br&gt;Source A: lightbridge-authz-stack OCI&lt;br&gt;Source B: kustomize overlay (TLS certs)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;fontSize=10;" vertex="1" parent="argocd-box">
+          <mxGeometry x="20" y="220" width="340" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e-oci-argocd" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="oci" target="app-lbs"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-oci-argocd2" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="oci" target="app-lbd"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-oci-argocd3" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="oci" target="app-lba"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-val-lba" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#F57F17;" edge="1" parent="1" source="values-repo" target="app-lba"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ══ Workload cluster ══ -->
+        <mxCell id="wl-box" value="&lt;b&gt;home-remote cluster — namespace: converse&lt;/b&gt;"
+                style="swimlane;startSize=28;fillColor=#FFF9E6;strokeColor=#D4A843;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="30" y="720" width="1160" height="360" as="geometry"/>
+        </mxCell>
+
+        <!-- ESO secrets -->
+        <mxCell id="eso" value="&lt;b&gt;ExternalSecrets (ssegning-aws, refresh 1h)&lt;/b&gt;&lt;br&gt;lightbridge-api-client → secret-id (Keycloak lightbridge-api-key client secret)&lt;br&gt;opa-secret → OPA_PASSWORD (Keycloak SPI Basic auth password)&lt;br&gt;lightbridge-cnpg-s3 → s3_access_key_id, s3_secret_access_key&lt;br&gt;  + literal s3_region_name: us-east-1 (barman webhook reads this key)&lt;br&gt;redis-ha-redis-auth → redis-password (prod/meta/test-app)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=9;" vertex="1" parent="wl-box">
+          <mxGeometry x="20" y="40" width="520" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- CNPG cluster -->
+        <mxCell id="cnpg" value="&lt;b&gt;CNPG Cluster: lightbridge-main-db&lt;/b&gt;&lt;br&gt;2 instances, PG 18.4, 5Gi storage&lt;br&gt;Roles: repoauth / codeintel / grafana_ro / coder / lakefs / mlflow&lt;br&gt;WAL archive → barman-cloud plugin (serverName: lightbridge-main-db)&lt;br&gt;archive_timeout: 30min"
+                style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=9;" vertex="1" parent="wl-box">
+          <mxGeometry x="580" y="40" width="300" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- Hetzner S3 -->
+        <mxCell id="s3-lb" value="&lt;b&gt;Hetzner Object Storage&lt;/b&gt;&lt;br&gt;nbg1.your-objectstorage.com&lt;br&gt;s3://ssegning-k8s-state/lightbridge-main-db&lt;br&gt;retentionPolicy: 7d (was 180d → rate-limited)&lt;br&gt;jobs:1 + gzip (prevents SlowDown throttling)"
+                style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E1BEE7;strokeColor=#6A1B9A;fontSize=9;" vertex="1" parent="wl-box">
+          <mxGeometry x="920" y="40" width="220" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- ScheduledBackup -->
+        <mxCell id="schedule" value="ScheduledBackup&lt;br&gt;0 0 */6 * * * (every 6h)&lt;br&gt;method: plugin (barman-cloud)&lt;br&gt;immediate: true"
+                style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#C8E6C9;strokeColor=#2E7D32;fontSize=9;" vertex="1" parent="wl-box">
+          <mxGeometry x="920" y="175" width="220" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- PodMonitor -->
+        <mxCell id="podmon" value="PodMonitor&lt;br&gt;port: metrics (9187)&lt;br&gt;→ Grafana Alloy → LGTM"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;fontSize=9;" vertex="1" parent="wl-box">
+          <mxGeometry x="580" y="175" width="200" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Lightbridge API + MCP pods -->
+        <mxCell id="lb-api" value="&lt;b&gt;lightbridge-authz-stack v0.8.1&lt;/b&gt;&lt;br&gt;&lt;b&gt;api component (Rust)&lt;/b&gt;&lt;br&gt;API key CRUD + project membership&lt;br&gt;OAuth2 token-exchange with Keycloak&lt;br&gt;Serves x-billing-plan / x-account-id claims&lt;br&gt;Redis-backed rate limiting (redis-ha-haproxy)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEDC8;strokeColor=#33691E;fontSize=9;strokeWidth=2;" vertex="1" parent="wl-box">
+          <mxGeometry x="20" y="185" width="280" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lb-mcp" value="&lt;b&gt;mcp component&lt;/b&gt;&lt;br&gt;MCP server (project self-service)&lt;br&gt;API key management tools&lt;br&gt;Used by LibreChat agents"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEDC8;strokeColor=#33691E;fontSize=9;" vertex="1" parent="wl-box">
+          <mxGeometry x="320" y="185" width="230" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e-cnpg-s3" value="WAL archive" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="wl-box" source="cnpg" target="s3-lb"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-sched-cnpg" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="wl-box" source="schedule" target="cnpg"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-podmon-cnpg" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="wl-box" source="podmon" target="cnpg"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-eso-api" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="wl-box" source="eso" target="lb-api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-api-cnpg" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="wl-box" source="lb-api" target="cnpg"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Sync arrows -->
+        <mxCell id="e-app-lbs-wl" value="syncs" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#C62828;" edge="1" parent="1" source="app-lbs" target="eso"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-app-lbd-wl" value="syncs" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#1565C0;" edge="1" parent="1" source="app-lbd" target="cnpg"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-app-lba-wl" value="syncs" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#558B2F;" edge="1" parent="1" source="app-lba" target="lb-api"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       PAGE 2 — Rate Limit Flow
+       Shows: request → headers stamped → BTP rules evaluated → Redis counters
+       ══════════════════════════════════════════════════════════════════════ -->
+  <diagram name="rate-limit-flow" id="RL-FLOW">
+    <mxGraphModel dx="2000" dy="1400" grid="1" gridSize="10" guides="1"
+                  tooltips="1" connect="1" arrows="1" fold="1" page="1"
+                  pageScale="1" pageWidth="1700" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="title3" value="&lt;b style='font-size:16px'&gt;Rate Limiting — Request Flow &amp; Plan Hierarchy&lt;/b&gt;&lt;br&gt;External client → header stamping → BTP rules → Lyft ratelimit → Redis counters"
+                style="text;html=1;align=center;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="900" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Client ══ -->
+        <mxCell id="client" value="&lt;b&gt;External Client&lt;/b&gt;&lt;br&gt;Presents JWT (from lightbridge-authz)&lt;br&gt;billing_plan claim inside JWT"
+                style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="200" width="180" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Envoy Gateway external listener ══ -->
+        <mxCell id="ext-listener" value="&lt;b&gt;Envoy AI Gateway&lt;/b&gt;&lt;br&gt;api.ai.camer.digital&lt;br&gt;External listener"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B2DFDB;strokeColor=#00695C;fontSize=10;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="270" y="180" width="200" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Authorino (AuthConfig) ══ -->
+        <mxCell id="authorino" value="&lt;b&gt;Authorino AuthConfig&lt;/b&gt;&lt;br&gt;JWT validation → Keycloak JWKS&lt;br&gt;Stamps headers:&lt;br&gt;&lt;b&gt;x-billing-plan&lt;/b&gt; ← JWT claim billing_plan&lt;br&gt;&lt;b&gt;x-account-id&lt;/b&gt; ← JWT claim sub&lt;br&gt;&lt;b&gt;x-billing-period&lt;/b&gt; ← Lua: YYYY-MM"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCBC;strokeColor=#BF360C;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="270" y="310" width="270" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Plans chart section ══ -->
+        <mxCell id="plans-box" value="&lt;b&gt;rateLimitBudgeting.plans (ai-models/values.yaml)&lt;/b&gt;&lt;br&gt;ORDERED LIST — append-only — propagated to every ai-model child"
+                style="swimlane;startSize=28;fillColor=#FFF3E0;strokeColor=#E65100;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="30" y="520" width="480" height="280" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="plan0" value="[0] enterprise   $1,000/month" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF8A65;strokeColor=#E64A19;fontSize=10;fontStyle=1;" vertex="1" parent="plans-box"><mxGeometry x="20" y="40" width="200" height="30" as="geometry"/></mxCell>
+        <mxCell id="plan1" value="[1] free          $50/month"   style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFB74D;strokeColor=#E64A19;fontSize=10;" vertex="1" parent="plans-box"><mxGeometry x="20" y="85" width="200" height="30" as="geometry"/></mxCell>
+        <mxCell id="plan2" value="[2] internal      uncapped"    style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCC80;strokeColor=#E64A19;fontSize=10;" vertex="1" parent="plans-box"><mxGeometry x="20" y="130" width="200" height="30" as="geometry"/></mxCell>
+        <mxCell id="plan3" value="[3] pro           $200/month"  style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#E64A19;fontSize=10;" vertex="1" parent="plans-box"><mxGeometry x="20" y="175" width="200" height="30" as="geometry"/></mxCell>
+        <mxCell id="plan4" value="[4] service       uncapped"    style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E64A19;fontSize=10;" vertex="1" parent="plans-box"><mxGeometry x="20" y="220" width="200" height="30" as="geometry"/></mxCell>
+
+        <mxCell id="plan-note" value="⚠️ burst: blocks all COMMENTED OUT (2026-08-01)&lt;br&gt;monthlyBudgetUsd DORMANT (sharedBudget.enabled: true)&lt;br&gt;Indices must NEVER change (Lyft key = rule/N)"
+                style="text;html=1;align=left;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="plans-box">
+          <mxGeometry x="240" y="40" width="230" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ BackendTrafficPolicy (per-model) ══ -->
+        <mxCell id="btp-box" value="&lt;b&gt;ai-model leaf: BackendTrafficPolicy (per-model)&lt;/b&gt;&lt;br&gt;e.g. name: gpt-4o, targetRefs: HTTPRoute/gpt-4o"
+                style="swimlane;startSize=28;fillColor=#E8F5E9;strokeColor=#2E7D32;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="520" width="450" height="280" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="btp-today" value="&lt;b&gt;Today (sharedBudget.enabled: true)&lt;/b&gt;&lt;br&gt;mergeType: StrategicMerge&lt;br&gt;retry: numRetries: 0 (neutralises gateway retry)&lt;br&gt;timeout: requestTimeout: 600s&lt;br&gt;&lt;br&gt;rateLimit: OMITTED ($hasRules = false)&lt;br&gt;No burst rules / no per-model budget rules render"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;fontSize=10;" vertex="1" parent="btp-box">
+          <mxGeometry x="20" y="40" width="410" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="btp-dormant" value="Dormant families (render when sharedBudget.enabled=false + burst uncommented):&lt;br&gt;[plan×0] burst req/min → x-account-id(Distinct)+x-billing-plan(Exact)+x-ai-eg-model&lt;br&gt;[plan×1] burst tok/min → same + cost from llm_total_token metadata&lt;br&gt;[plan×2] monthly budget → +x-billing-period(Distinct), unit:Year"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFEBE9;strokeColor=#795548;fontSize=9;" vertex="1" parent="btp-box">
+          <mxGeometry x="20" y="180" width="410" height="85" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Gateway-wide BTP (shared budget) ══ -->
+        <mxCell id="gw-btp" value="&lt;b&gt;core-gateway BTP (LIVE monthly budget)&lt;/b&gt;&lt;br&gt;shared: true — one counter per (user, plan)&lt;br&gt;Keys: x-account-id(Distinct) + x-billing-plan(Exact) + x-billing-period(Distinct)&lt;br&gt;Plans (from ai-helm-values):&lt;br&gt;free=$50, pro=$200, enterprise=$1000&lt;br&gt;unit: Year (TTL; actual reset via x-billing-period YYYY-MM change)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B2DFDB;strokeColor=#00695C;fontSize=9;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="320" width="350" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Lyft ratelimit Redis ══ -->
+        <mxCell id="redis-rl" value="&lt;b&gt;Lyft ratelimit service → Redis&lt;/b&gt;&lt;br&gt;Key format: &lt;domain&gt;_rule/N_&lt;header-combos&gt;_&lt;epoch&gt;&lt;br&gt;N = zero-based rule index in BTP rules list&lt;br&gt;&lt;br&gt;Example (shared budget, free plan, Sept 2026):&lt;br&gt;&lt;font face='monospace' size='1'&gt;&lt;domain&gt;_rule/0_x-account-id_&lt;sub&gt;_x-billing-plan_free_x-billing-period_2026-09_&lt;epoch&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;⚠️ unit:Year epoch changes ~annually (not monthly).&lt;br&gt;Monthly reset = x-billing-period value change on 1st of month."
+                style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFCDD2;strokeColor=#C62828;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="530" width="400" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ tiers / projectEnvelope ══ -->
+        <mxCell id="tiers-box" value="&lt;b&gt;tiers: [] / projectEnvelope: {}&lt;/b&gt;&lt;br&gt;Both empty today → no rule renders&lt;br&gt;Template loops and guards exist in&lt;br&gt;charts/ai-model/templates/backendtrafficpolicy.yaml&lt;br&gt;&lt;br&gt;tiers: keyed on x-project-id+x-account-id+x-quota-tier+x-billing-period&lt;br&gt;projectEnvelope: keyed on x-project-id+x-project-quota+x-billing-period&lt;br&gt;Both also append-only (same Lyft key hazard)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3949AB;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="590" y="840" width="490" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Append-only rule ══ -->
+        <mxCell id="append-only" value="&lt;b&gt;⚠️ Append-Only Contract&lt;/b&gt;&lt;br&gt;Plans/tiers are YAML lists, NOT maps&lt;br&gt;Helm would sort map keys → reorders → orphans Redis counters&lt;br&gt;Rule: comment out, NEVER delete or reorder&lt;br&gt;Each entry keeps its index comment even when burst: is commented out&lt;br&gt;id guard: fail if id missing (prevents silent mis-rendering)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#C62828;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="840" width="480" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ══ Edges ══ -->
+        <mxCell id="e-client-listener" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=2;" edge="1" parent="1" source="client" target="ext-listener"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-listener-auth" value="AuthN/AuthZ" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="ext-listener" target="authorino"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-auth-btp" value="x-billing-plan, x-account-id, x-billing-period" style="edgeStyle=orthogonalEdgeStyle;curved=1;" edge="1" parent="1" source="authorino" target="btp-box"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-btp-gw" value="StrategicMerge" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00695C;strokeWidth=2;" edge="1" parent="1" source="btp-today" target="gw-btp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-gw-redis" value="counter check / increment" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#C62828;strokeWidth=2;" edge="1" parent="1" source="gw-btp" target="redis-rl"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-plans-btp" value="propagated via ApplicationSet valuesObject" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#E65100;" edge="1" parent="1" source="plans-box" target="btp-box"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+</mxfile>
