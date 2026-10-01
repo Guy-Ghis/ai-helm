@@ -1,0 +1,721 @@
+<mxfile host="app.diagrams.net" version="21.0.0" type="device" pages="10">
+  <diagram name="1 — Data Model">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="101" value="Diagram 1 — Data Model: Projects, Members, API Keys" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="900" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="102" value="&lt;b&gt;ACCOUNTS&lt;/b&gt;&lt;br/&gt;──────────────&lt;br/&gt;id (PK = JWT sub)&lt;br/&gt;user_id FK&lt;br/&gt;default_quota&lt;br/&gt;status: active | suspended" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=0;fontSize=13;">
+          <mxGeometry x="60" y="100" width="220" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="103" value="&lt;b&gt;PROJECTS&lt;/b&gt;&lt;br/&gt;──────────────&lt;br/&gt;id (PK)&lt;br/&gt;account_id FK&lt;br/&gt;name&lt;br/&gt;billing_plan&lt;br/&gt;model_policy: allow_all | allowlist | deny_all&lt;br/&gt;allowed_models (jsonb)&lt;br/&gt;project_quota ⚠️ not enforced&lt;br/&gt;status: active | suspended" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=0;fontSize=13;">
+          <mxGeometry x="60" y="320" width="260" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="104" value="&lt;b&gt;PROJECT_MEMBERS&lt;/b&gt;&lt;br/&gt;──────────────&lt;br/&gt;project_id (PK, FK)&lt;br/&gt;account_id (PK, FK)&lt;br/&gt;role: lead | member&lt;br/&gt;quota_tier ⚠️ not enforced" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=0;fontSize=13;">
+          <mxGeometry x="400" y="320" width="240" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="105" value="&lt;b&gt;API_KEYS&lt;/b&gt;&lt;br/&gt;──────────────&lt;br/&gt;id (PK)&lt;br/&gt;project_id FK&lt;br/&gt;owner_account_id FK&lt;br/&gt;key_hash (SHA-256, UNIQUE)&lt;br/&gt;billing_plan&lt;br/&gt;status: active | revoked&lt;br/&gt;expires_at (nullable)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="400" y="100" width="240" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="106" value="owns (account_id)" edge="1" source="102" target="103" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="107" value="joins as (account_id)" edge="1" source="102" target="104" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="108" value="roster (project_id)" edge="1" source="103" target="104" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="109" value="issues (project_id)" edge="1" source="103" target="105" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="110" value="billed for" edge="1" source="102" target="105" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="111" value="⚠️ Fields marked 'not enforced':&#10;  project_quota — pooled ceiling, in DB, not yet active at gateway&#10;  quota_tier — per-member ceiling, in DB, not yet active at gateway" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fillColor=#fff9c4;strokeColor=#f57f17;fontStyle=0;fontSize=13;">
+          <mxGeometry x="60" y="620" width="580" height="70" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="2 — Project Lifecycle">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="112" value="Diagram 2 — Project Lifecycle: Create → Configure → Mint Keys" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="1000" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="113" value="Admin / User" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc107;strokeColor=#e65100;fontStyle=1;fontSize=13;">
+          <mxGeometry x="60" y="90" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="114" value="Lightbridge API&#10;(Rust service)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#42a5f5;strokeColor=#1565c0;fontStyle=1;fontSize=13;">
+          <mxGeometry x="280" y="90" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="115" value="PostgreSQL&#10;(Lightbridge DB)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ef5350;strokeColor=#b71c1c;fontStyle=1;fontSize=13;">
+          <mxGeometry x="540" y="90" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="116" vertex="1" parent="1" style="endArrow=none;dashed=1;html=1;dashPattern=8 4;">
+          <mxGeometry x="130" y="140" width="1" height="660" as="geometry"/>
+        </mxCell>
+        <mxCell id="117" vertex="1" parent="1" style="endArrow=none;dashed=1;html=1;dashPattern=8 4;">
+          <mxGeometry x="370" y="140" width="1" height="660" as="geometry"/>
+        </mxCell>
+        <mxCell id="118" vertex="1" parent="1" style="endArrow=none;dashed=1;html=1;dashPattern=8 4;">
+          <mxGeometry x="630" y="140" width="1" height="660" as="geometry"/>
+        </mxCell>
+        <mxCell id="119" value="Step 1 — Create the Project" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontStyle=1;fontSize=12;">
+          <mxGeometry x="60" y="160" width="650" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="120" value="Step 2 — Restrict Model Access" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;fontSize=12;">
+          <mxGeometry x="60" y="300" width="650" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="121" value="Step 3 — Add a Team Member" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=1;fontSize=12;">
+          <mxGeometry x="60" y="440" width="650" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="122" value="Step 4 — Mint an API Key" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#880e4f;fontStyle=1;fontSize=12;">
+          <mxGeometry x="60" y="570" width="650" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="123" value="POST /projects&#10;{billing_plan: 'pro'}" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;align=left;">
+          <mxGeometry x="90" y="200" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="124" value="INSERT INTO projects&#10;(name, billing_plan,...)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;align=left;">
+          <mxGeometry x="300" y="200" width="210" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="125" value="project_id = 'proj-abc'" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="300" y="250" width="210" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="126" value="201 Created { id: 'proj-abc' }" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="90" y="250" width="160" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="127" value="" edge="1" source="123" target="124" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="128" value="" edge="1" source="125" target="126" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="129" value="PATCH /projects/proj-abc&#10;{model_policy:'allowlist',&#10;allowed_models:['gpt-4o']}" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;align=left;">
+          <mxGeometry x="90" y="340" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="130" value="UPDATE projects SET&#10;model_policy='allowlist'..." vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;align=left;">
+          <mxGeometry x="300" y="340" width="210" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="131" value="OK" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="300" y="390" width="210" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="132" value="200 OK" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="90" y="390" width="160" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="133" value="" edge="1" source="129" target="130" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="134" value="" edge="1" source="131" target="132" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="135" value="POST /projects/proj-abc/members&#10;{account_id:'user-xyz'}" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;align=left;">
+          <mxGeometry x="90" y="480" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="136" value="INSERT INTO project_members&#10;(project_id, account_id, role)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;align=left;">
+          <mxGeometry x="300" y="480" width="210" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="137" value="OK" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="300" y="530" width="210" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="138" value="200 OK" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="90" y="530" width="160" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="139" value="" edge="1" source="135" target="136" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="140" value="" edge="1" source="137" target="138" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="141" value="POST /api-keys&#10;{name:'CI Key'}" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;align=left;">
+          <mxGeometry x="90" y="610" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="142" value="INSERT INTO api_keys&#10;(project_id, key_hash, ...)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;align=left;">
+          <mxGeometry x="300" y="610" width="210" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="143" value="key_id = 'key-123'" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="300" y="660" width="210" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="144" value="201 Created&#10;{secret:'sk-abc...'}&#10;⚠️ shown ONCE, never stored" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;align=left;">
+          <mxGeometry x="90" y="660" width="200" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="145" value="" edge="1" source="141" target="142" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="146" value="" edge="1" source="143" target="144" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="3 — Model Policy">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="147" value="Diagram 3 — Model Policy Enforcement: From DB Setting to Gateway 403" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="1000" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="148" value="Developer" vertex="1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;">
+          <mxGeometry x="50" y="100" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="149" value="POST /v1/chat&#10;body: { model: 'deepseek-r1' }" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontStyle=0;fontSize=13;">
+          <mxGeometry x="130" y="110" width="220" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="150" value="sends" edge="1" source="148" target="149" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="151" value="&lt;b&gt;In Lightbridge DB (set via API):&lt;/b&gt;&#10;model_policy = 'allowlist'&#10;allowed_models = ['gpt-4o']" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontStyle=0;fontSize=13;">
+          <mxGeometry x="130" y="190" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="152" value="Phase 1: Identity &amp; Policy Resolution" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#1565c0;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="290" width="700" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="153" value="Envoy AI Gateway" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="80" y="340" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="154" value="Authorino&#10;(ext_authz)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="300" y="340" width="150" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="155" value="Lightbridge API&#10;+ Keycloak" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="520" y="340" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="156" value="Lightbridge DB" vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=0;fontSize=13;">
+          <mxGeometry x="520" y="420" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="157" value="request" edge="1" source="149" target="153" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="158" value="1. validate key" edge="1" source="153" target="154" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="159" value="2. token exchange&#10;lookup project" edge="1" source="154" target="155" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="160" value="3. SELECT model_policy,&#10;allowed_models" edge="1" source="155" target="156" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="161" value="allowlist, [gpt-4o]" edge="1" source="156" target="155" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="162" value="project policy" edge="1" source="155" target="154" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="163" value="&lt;b&gt;Headers stamped on request:&lt;/b&gt;&#10;x-model-policy: allowlist&#10;x-allowed-models: gpt-4o&#10;x-ai-eg-model: deepseek-r1" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontStyle=0;fontSize=13;">
+          <mxGeometry x="300" y="420" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="164" value="4. stamp headers" edge="1" source="154" target="163" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="165" value="Phase 2: Lua Enforcement (filter order 13)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#e65100;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="540" width="700" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="166" value="Lua Script&#10;(model-policy.lua)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=1;fontSize=13;">
+          <mxGeometry x="300" y="595" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="167" value="pass headers to filter" edge="1" source="163" target="166" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="168" value="x-model-policy = 'allowlist'&#10;allowed = ['gpt-4o']&#10;requested = 'deepseek-r1'&#10;'deepseek-r1' NOT IN ['gpt-4o']" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="520" y="595" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="169" value="check" edge="1" source="166" target="168" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="170" value="403 Forbidden&#10;{ error: 'model_not_allowed' }" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="300" y="710" width="220" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="171" value="DENY" edge="1" source="168" target="170" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="172" value="403 Forbidden" edge="1" source="170" target="148" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="4 — Identity Resolution">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="173" value="Diagram 4 — Identity Resolution: API Key → Request Headers" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="1050" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="174" value="User&#10;(API Key)" vertex="1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;">
+          <mxGeometry x="50" y="100" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="175" value="Envoy&#10;AI Gateway" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="200" y="100" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="176" value="Authorino&#10;(ext_authz, order 5)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="420" y="100" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="177" value="Keycloak&#10;(token exchange)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=1;fontSize=13;">
+          <mxGeometry x="650" y="100" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="178" value="Lightbridge API&#10;(authz service)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="650" y="220" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="179" value="Lightbridge DB&#10;(PostgreSQL)" vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=0;fontSize=13;">
+          <mxGeometry x="650" y="340" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="180" value="Request +&#10;API Key" edge="1" source="174" target="175" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="181" value="1. Authenticate" edge="1" source="175" target="176" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="182" value="2. Exchange&#10;key for token" edge="1" source="176" target="177" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="183" value="3. Lookup key&#10;metadata" edge="1" source="177" target="178" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="184" value="4. SELECT project,&#10;plan, model_policy..." edge="1" source="178" target="179" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="185" value="Project row" edge="1" source="179" target="178" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="186" value="billing_plan, model_policy,&#10;allowed_models, balance" edge="1" source="178" target="177" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="187" value="Identity + project claims" edge="1" source="177" target="176" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="188" value="&lt;b&gt;5. Headers stamped on the request:&lt;/b&gt;&lt;br/&gt;──────────────────────────────────────&lt;br/&gt;x-billing-plan: pro&lt;br/&gt;x-account-id: proj-abc&lt;br/&gt;x-model-policy: allowlist&lt;br/&gt;x-allowed-models: gpt-4o, claude-3-5-sonnet&lt;br/&gt;x-billing-period: 2026-10 &amp;nbsp;← Lua stamps this&lt;br/&gt;──────────────────────────────────────&lt;br/&gt;&lt;i&gt;Dynamic metadata (internal only — not a header):&lt;/i&gt;&lt;br/&gt;budget.remaining_micros: 8457487&lt;br/&gt;budget.decision: allow&lt;br/&gt;budget.known: true&lt;br/&gt;budget.enforced: true" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#33691e;fontStyle=0;fontSize=13;">
+          <mxGeometry x="200" y="250" width="400" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="189" value="5. Stamp onto request" edge="1" source="176" target="188" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="5 — Two Guardians">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="190" value="Diagram 5 — The Two Guardians: Speed Cop + Bank" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="900" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="191" value="User&#10;Request" vertex="1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;">
+          <mxGeometry x="50" y="140" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="192" value="Envoy AI Gateway&#10;(core-gateway)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=14;">
+          <mxGeometry x="200" y="130" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="193" value="" edge="1" source="191" target="192" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="194" value="Authorino&#10;(stamps balance +&#10;billing-plan headers)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=0;fontSize=13;">
+          <mxGeometry x="200" y="260" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="195" value="" edge="1" source="192" target="194" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="196" value="Speed Cop (rpmPerKey)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#880e4f;strokeColor=#880e4f;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="450" y="90" width="280" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="197" value="Lyft Ratelimit&#10;Service&#10;(2 pods)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#880e4f;fontStyle=1;fontSize=13;">
+          <mxGeometry x="480" y="140" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="198" value="Redis&#10;(60s counters)" vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fce4ec;strokeColor=#880e4f;fontStyle=0;fontSize=13;">
+          <mxGeometry x="480" y="260" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="199" value="3. Check RPM" edge="1" source="194" target="197" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="200" value="INCR counter" edge="1" source="197" target="198" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="201" value="count" edge="1" source="198" target="197" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="202" value="The Bank (Budget Limiter)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a237e;strokeColor=#1a237e;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="700" y="90" width="280" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="203" value="Lua Script&#10;(budget-limiter.lua)&#10;filter order 14" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#1a237e;fontStyle=1;fontSize=13;">
+          <mxGeometry x="730" y="140" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="204" value="Lightbridge Ledger&#10;(live balance)" vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#e8eaf6;strokeColor=#1a237e;fontStyle=0;fontSize=13;">
+          <mxGeometry x="730" y="260" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="205" value="2. Check balance&#10;metadata" edge="1" source="194" target="203" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="206" value="balance stamped&#10;at auth time" edge="1" source="204" target="194" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="207" value="429&#10;Too Many Requests" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="480" y="380" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="208" value="402&#10;Payment Required" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="730" y="380" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="209" value="✅ AI Model Backend&#10;(request forwarded)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="570" y="480" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="210" value="over limit" edge="1" source="197" target="207" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="211" value="balance ≤ 0" edge="1" source="203" target="208" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="212" value="under limit" edge="1" source="197" target="209" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="213" value="balance &gt; 0" edge="1" source="203" target="209" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="6 — RPM Per Key">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="214" value="Diagram 6 — rpmPerKey Flow: The Speed Cop" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="900" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="215" value="User" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontStyle=1;fontSize=13;">
+          <mxGeometry x="50" y="150" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="216" value="Envoy&#10;AI Gateway" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="230" y="140" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="217" value="Lyft Ratelimit&#10;Service" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#880e4f;fontStyle=1;fontSize=13;">
+          <mxGeometry x="470" y="140" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="218" value="Redis&#10;(60s window)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#880e4f;fontStyle=1;fontSize=13;">
+          <mxGeometry x="470" y="280" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="219" value="AI Model&#10;Backend" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="690" y="140" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="220" value="POST /v1/chat&#10;(model: deepseek-r1)" edge="1" source="215" target="216" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="221" value="Is caller over limit?&#10;(x-api-key-id + model)" edge="1" source="216" target="217" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="222" value="INCR&#10;rpm-rule/0/abc123/deepseek-r1" edge="1" source="217" target="218" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="223" value="Returns count (e.g. 43)" edge="1" source="218" target="217" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="224" value="Count &lt; limit (e.g. 43 &lt; 60)&#10;→ ALLOW" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="250" y="360" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="225" value="Count ≥ limit (e.g. 61 ≥ 60)&#10;→ DENY" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=0;fontSize=13;">
+          <mxGeometry x="500" y="360" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="226" value="under limit" edge="1" source="217" target="224" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="227" value="over limit" edge="1" source="217" target="225" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="228" value="forward request" edge="1" source="224" target="219" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="229" value="AI Response" edge="1" source="219" target="215" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="230" value="429 Too Many Requests" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="500" y="460" width="200" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="231" value="" edge="1" source="225" target="230" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="232" value="429" edge="1" source="230" target="215" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="233" value="Two rules render per model (to cover all traffic planes):&#10;  rpm-rule/0: keyed on x-api-key-id + model  (external API callers)&#10;  rpm-rule/1: keyed on x-account-id + model  (internal callers too)&#10;&#10;Redis key expires automatically after 60 seconds.&#10;rpmPerKey: 0 = opt-out (renders no rules for that model)." vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fillColor=#fff9c4;strokeColor=#f57f17;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="520" width="600" height="100" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="7 — Budget Limiter">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="234" value="Diagram 7 — Dynamic Budget Limiter: The Bank (Lua + Lightbridge Ledger)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="950" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="235" value="Request arrives&#10;at Envoy" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="50" y="120" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="236" value="Authorino&#10;reads balance&#10;from Lightbridge&#10;(at auth time)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=0;fontSize=13;">
+          <mxGeometry x="280" y="100" width="180" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="237" value="Lightbridge&#10;Ledger DB&#10;(live balance)" vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=0;fontSize=13;">
+          <mxGeometry x="280" y="260" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="238" value="Dynamic Metadata&#10;stamped on request:&#10;  budget.remaining_micros&#10;  budget.decision&#10;  budget.known&#10;  budget.enforced" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#33691e;fontStyle=0;fontSize=13;">
+          <mxGeometry x="530" y="80" width="220" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="239" value="Lua Script&#10;budget-limiter.lua&#10;(filter order 14)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=1;fontSize=13;">
+          <mxGeometry x="530" y="240" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="240" value="1. authenticate" edge="1" source="235" target="236" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="241" value="reads balance&#10;(embedded in introspection)" edge="1" source="236" target="237" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="242" value="remaining_micros,&#10;next_reset_at,..." edge="1" source="237" target="236" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=8 4;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="243" value="2. stamp metadata&#10;(internal only, not a header)" edge="1" source="236" target="238" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="244" value="3. Lua reads metadata" edge="1" source="238" target="239" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="245" value="remaining &gt; 0&#10;→ ALLOW" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="380" y="380" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="246" value="remaining ≤ 0&#10;→ DENY" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=0;fontSize=13;">
+          <mxGeometry x="620" y="380" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="247" value="metadata absent +&#10;model header present&#10;→ 503 (misconfigured chain)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="380" y="480" width="210" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="248" value="known = false&#10;→ 503 (our outage,&#10;not user's budget)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="620" y="480" width="210" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="249" value="✅ AI Model Backend" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="380" y="580" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="250" value="402 Payment Required&#10;{account_id, remaining_micros:0,&#10;refill_url, next_reset_at}" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="620" y="580" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="251" value="balance positive" edge="1" source="239" target="245" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="252" value="balance spent" edge="1" source="239" target="246" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="253" value="no metadata&#10;+ model request" edge="1" source="239" target="247" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="254" value="balance unknown" edge="1" source="239" target="248" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="255" value="" edge="1" source="245" target="249" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="256" value="" edge="1" source="246" target="250" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="257" value="Shadow Mode (shadowMode: true):&#10;  Script runs, decides, logs — but NEVER blocks.&#10;  Rollback = set shadowMode: true in core-gateway values → ArgoCD syncs within seconds." vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fillColor=#e8eaf6;strokeColor=#3949ab;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="660" width="600" height="70" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="8 — Append-Only Trap">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="258" value="Diagram 8 — The Append-Only List Contract" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="1050" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="259" value="BEFORE — Inserting at index 0 (alphabetically)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1b5e20;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="50" y="80" width="430" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="260" value="Index 0: enterprise" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="130" width="430" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="261" value="Index 1: free  ← free user's counter lives HERE" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="190" width="430" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="262" value="Index 2: internal" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="250" width="430" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="263" value="Index 3: pro" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="310" width="430" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="264" value="Index 4: service" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="370" width="430" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="265" value="AFTER — 'basic' inserted at index 0" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b71c1c;strokeColor=#b71c1c;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="560" y="80" width="450" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="266" value="Index 0: basic  ← NEW" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="130" width="450" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="267" value="Index 1: enterprise  ← was 0, SHIFTED" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="190" width="450" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="268" value="Index 2: free  ← was 1, SHIFTED — fresh counter!" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="250" width="450" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="269" value="Index 3: internal  ← was 2, SHIFTED" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="310" width="450" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="270" value="Index 4: pro  ← was 3, SHIFTED" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="370" width="450" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="271" value="Index 5: service  ← was 4, SHIFTED" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="430" width="450" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="272" value="What goes wrong:&#10;  A 'free' user spent $12 of their $15 budget.&#10;  Their Redis counter was at key rule/1.&#10;  After insertion, 'free' is now at index 2 → key rule/2.&#10;  Lyft looks up rule/2 — it does NOT exist yet in Redis.&#10;  A FRESH counter starts at $0 — the user gets a free reset mid-month!&#10;&#10;  This happened live on 2026-07-16 on charts/core-gateway." vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="500" width="500" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="273" value="The Rules:&#10;  ✅ APPEND only — add new plans at the END of the list&#10;  ❌ NEVER insert in the middle&#10;  ❌ NEVER delete an entry (comment out body, keep id: stub)&#10;  ❌ NEVER reorder&#10;&#10;Why not use a YAML map (keyed by name)?&#10;  Helm sorts map keys alphabetically on every render.&#10;  Inserting 'basic' would still shift 'enterprise' and 'free' — same bug, invisible." vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=0;fontSize=13;">
+          <mxGeometry x="560" y="500" width="450" height="150" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="9 — Three Layers">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="274" value="Diagram 9 — Three Rate-Limit Layers (AND Logic): Plans / Tiers / Envelope" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="1000" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="275" value="Request" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="420" y="60" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="276" value="Layer 1 — User Plan Limit (Family 3)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4a148c;strokeColor=#4a148c;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="50" y="140" width="340" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="277" value="Plan bucket&#10;exhausted?" vertex="1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="360" y="150" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="278" value="DENY&#10;429 / 402" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="640" y="155" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="279" value="" edge="1" source="275" target="277" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="280" value="Yes" edge="1" source="277" target="278" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="281" value="Layer 2 — Member Tier Limit (Family 4)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d47a1;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="50" y="270" width="340" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="282" value="Tier bucket&#10;exhausted?" vertex="1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="360" y="280" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="283" value="DENY&#10;429 / 402" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="640" y="285" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="284" value="No" edge="1" source="277" target="282" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="285" value="Yes" edge="1" source="282" target="283" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="286" value="Layer 3 — Project Envelope (Family 5)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1b5e20;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="50" y="400" width="340" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="287" value="Envelope bucket&#10;exhausted?" vertex="1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="360" y="410" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="288" value="DENY&#10;429 / 402" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="640" y="415" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="289" value="No" edge="1" source="282" target="287" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="290" value="Yes" edge="1" source="287" target="288" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="291" value="✅ ALLOW&#10;Request forwarded to AI model" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="360" y="530" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="292" value="No" edge="1" source="287" target="291" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="293" value="Current state in production (2026-10):&#10;  ❌ Layer 1 (User Plan): tiers have no monthlyBudgetUsd active → 0 rules render&#10;  ❌ Layer 2 (Member Tier): tiers: [] empty → 0 rules render&#10;  ❌ Layer 3 (Project Envelope): projectEnvelope: {} empty → 0 rules render&#10;&#10;  ✅ rpmPerKey (Family 6) is the ONLY active rate-limit rule today.&#10;  ✅ Money enforcement is handled by the Lua Budget Limiter (Diagram 7) — NOT these Redis buckets." vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fillColor=#fff9c4;strokeColor=#f57f17;fontStyle=0;fontSize=13;">
+          <mxGeometry x="50" y="620" width="750" height="120" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="10 — Full Gauntlet">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="294" value="Diagram 10 — The Complete Request Gauntlet" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023047;strokeColor=#023047;fontColor=#ffffff;fontStyle=1;fontSize=14;">
+          <mxGeometry x="30" y="20" width="1050" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="295" value="User Request&#10;(API Key + model body)" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=1;fontSize=13;">
+          <mxGeometry x="390" y="60" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="296" value="Authorino (ext_authz)&#10;Validate key → stamp:&#10;  x-billing-plan, x-account-id&#10;  x-model-policy, x-allowed-models&#10;  budget metadata" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontStyle=0;fontSize=13;">
+          <mxGeometry x="370" y="160" width="240" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="297" value="Lua filter 1&#10;(billing-period stamper)&#10;Stamps x-billing-period&#10;and x-billing-week" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontStyle=0;fontSize=13;">
+          <mxGeometry x="370" y="300" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="298" value="Lua filter 2&#10;(model-policy.lua)&#10;Model in allowlist?" vertex="1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="360" y="420" width="260" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="299" value="Lua filter 3&#10;(budget-limiter.lua)&#10;balance &gt; 0?" vertex="1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="360" y="570" width="260" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="300" value="Lyft Ratelimit&#10;(rpmPerKey)&#10;under RPM limit?" vertex="1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=0;fontSize=13;">
+          <mxGeometry x="360" y="720" width="260" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="301" value="✅ AI Model Backend&#10;Request forwarded" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;">
+          <mxGeometry x="390" y="870" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="302" value="" edge="1" source="295" target="296" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="303" value="" edge="1" source="296" target="297" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="304" value="" edge="1" source="297" target="298" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="305" value="Yes (allowed)" edge="1" source="298" target="299" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="306" value="Yes (balance &gt; 0)" edge="1" source="299" target="300" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="307" value="Yes (under limit)" edge="1" source="300" target="301" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="308" value="403 Forbidden&#10;model_not_allowed" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="680" y="430" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="309" value="402 Payment Required&#10;budget_exhausted" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="680" y="580" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="310" value="429 Too Many Requests&#10;rate_limit_exceeded" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontStyle=1;fontSize=13;">
+          <mxGeometry x="680" y="730" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="311" value="No (denied)" edge="1" source="298" target="308" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="312" value="No (≤ 0)" edge="1" source="299" target="309" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="313" value="No (over limit)" edge="1" source="300" target="310" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

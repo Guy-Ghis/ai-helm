@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant U as User
+    participant E as Envoy
+    participant L as Lyft Ratelimit
+    participant R as Redis
+    participant M as AI Model
+
+    U->>E: POST /v1/chat/completions
+    E->>L: Is x-api-key-id + model over limit?
+    L->>R: INCR rpm-rule/0/abc123/deepseek-r1
+    R-->>L: Returns Count (e.g. 43)
+    
+    alt Under Limit (e.g., limit is 60)
+        L-->>E: Allow (OK)
+        E->>M: Forward Request
+        M-->>U: AI Response
+    else Over Limit (e.g., hits 61)
+        L-->>E: Deny (OverLimit)
+        E-->>U: 429 Too Many Requests
+    end

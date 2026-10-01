@@ -1,0 +1,20 @@
+@startuml
+actor "Developer / User" as U
+participant "Lightbridge API (Rust)" as API
+database "Lightbridge DB (PostgreSQL)" as DB
+
+U -> API: 1. Create Project "Dev Team"
+API -> DB: INSERT Project (plan: free)
+DB --> API: Project ID
+API --> U: Success
+
+U -> API: 2. Restrict to specific models
+API -> DB: UPDATE Policy (allowlist: gpt-4o)
+DB --> API: OK
+API --> U: Success
+
+U -> API: 3. Mint new API Key
+API -> DB: INSERT API Key (linked to Project)
+DB --> API: Key ID
+API --> U: Returns "sk-abc123..."
+@enduml

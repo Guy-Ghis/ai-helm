@@ -1,0 +1,41 @@
+@startuml
+skinparam titleFontSize 16
+skinparam rectangleBackgroundColor #E8F5E9
+skinparam databaseBackgroundColor #FCE4EC
+skinparam arrowColor #333333
+
+title How an API Key Becomes Request Headers
+
+actor "User with API Key\n(sk-abc...)" as User
+rectangle "Envoy AI Gateway" as Envoy #E1F5FE
+rectangle "Authorino\n(ext_authz, order 5)" as Auth #E1F5FE
+
+rectangle "Keycloak\n(token exchange)" as KC #FFF3E0
+rectangle "Lightbridge API\n(authz service)" as LB #E8F5E9
+database "Lightbridge DB\n(PostgreSQL)" as DB #FCE4EC
+
+User -> Envoy : Request + API Key
+Envoy -> Auth : 1. Authenticate
+Auth -> KC : 2. Exchange key for token
+KC -> LB : 3. Lookup key metadata
+LB -> DB : 4. SELECT project, plan, model_policy...
+DB --> LB : Row: project data
+LB --> KC : billing_plan, model_policy, balance...
+KC --> Auth : Identity + project claims
+Auth --> Envoy : 5. Stamp headers onto request:
+note right of Envoy
+  Headers stamped on every request:
+  ─────────────────────────────────
+  x-billing-plan: pro
+  x-account-id: proj-abc
+  x-model-policy: allowlist
+  x-allowed-models: gpt-4o,claude-3-5-sonnet
+  x-billing-period: 2026-10  (Lua stamps this)
+  ─────────────────────────────────
+  Dynamic metadata (internal only):
+  budget.remaining_micros: 8457487
+  budget.decision: allow
+  budget.known: true
+  budget.enforced: true
+end note
+@enduml

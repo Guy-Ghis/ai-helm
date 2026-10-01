@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant U as User
+    participant E as Envoy AI Gateway
+    participant Auth as Authorino
+    participant KC as Keycloak / Lightbridge
+    participant Lua as Lua Model Policy Script
+
+    U->>E: POST /v1/chat (Model: deepseek-r1)
+    
+    rect rgb(240, 248, 255)
+        note right of E: 1. Identity Resolution Phase
+        E->>Auth: Validate "sk-abc123..."
+        Auth->>KC: Token Exchange (Lookup Key)
+        KC-->>Auth: Project is restricted to [gpt-4o]
+        Auth-->>E: Attach Headers: x-allowed-models=gpt-4o
+    end
+    
+    rect rgb(255, 243, 224)
+        note right of E: 2. Lua Enforcement Phase
+        E->>Lua: Run model-policy.lua
+        Lua->>Lua: Request is deepseek-r1, but list is [gpt-4o]
+        Lua-->>E: DENY (Not in allowlist)
+    end
+    
+    E-->>U: 403 Forbidden

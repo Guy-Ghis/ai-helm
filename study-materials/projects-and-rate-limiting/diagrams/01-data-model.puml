@@ -1,0 +1,53 @@
+@startuml
+!define TABLE(x) class x << (T,#FFCC00) >>
+hide methods
+hide stereotypes
+skinparam classBackgroundColor #FFFDE7
+skinparam classBorderColor #F9A825
+skinparam classFontSize 13
+skinparam arrowColor #555555
+skinparam titleFontSize 16
+
+title Data Model: Projects, Members, API Keys
+
+TABLE(ACCOUNTS) {
+  id : text PK (= JWT sub)
+  user_id : text FK
+  default_quota : text nullable
+  status : active | suspended
+}
+
+TABLE(PROJECTS) {
+  id : text PK
+  account_id : text FK
+  name : text
+  billing_plan : free | pro | enterprise | ...
+  model_policy : allow_all | allowlist | deny_all
+  allowed_models : jsonb nullable
+  project_quota : text (NOT YET enforced)
+  status : active | suspended
+}
+
+TABLE(PROJECT_MEMBERS) {
+  project_id : text PK, FK
+  account_id : text PK, FK
+  role : lead | member
+  quota_tier : text (NOT YET enforced)
+}
+
+TABLE(API_KEYS) {
+  id : text PK
+  project_id : text FK
+  owner_account_id : text FK
+  key_hash : text UNIQUE (SHA-256)
+  billing_plan : text
+  status : active | revoked
+  expires_at : timestamptz nullable
+}
+
+ACCOUNTS "1" --> "0..*" PROJECTS : owns
+PROJECTS "1" --> "0..*" PROJECT_MEMBERS : roster
+ACCOUNTS "1" --> "0..*" PROJECT_MEMBERS : joins as member
+PROJECTS "1" --> "0..*" API_KEYS : issues
+ACCOUNTS "1" --> "0..*" API_KEYS : billed for
+@enduml

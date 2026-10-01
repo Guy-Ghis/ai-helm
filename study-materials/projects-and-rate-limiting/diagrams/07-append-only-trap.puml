@@ -1,0 +1,15 @@
+@startuml
+package "Before: Free user is at rule/1" {
+    rectangle "Index 0: Enterprise" as L0B
+    rectangle "Index 1: Free (Counter = $12 spent)" as L1B #FFCDD2
+    rectangle "Index 2: Internal" as L2B
+}
+
+package "After: Inserted 'Basic' at top" {
+    rectangle "Index 0: Basic (NEW)" as L0A #E8F5E9
+    rectangle "Index 1: Enterprise" as L1A
+    rectangle "Index 2: Free (Fresh Counter = $0 spent!)" as L2A #FFCDD2
+}
+
+L1B -[hidden]-> L2A
+@enduml

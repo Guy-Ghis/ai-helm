@@ -1,0 +1,38 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam titleFontSize 16
+
+title Model Policy Enforcement: From Project DB to Gateway 403
+
+actor "Developer" as Dev
+participant "Envoy AI Gateway" as Envoy
+participant "Authorino\n(ext_authz)" as Auth
+participant "Lightbridge API\n+ Keycloak" as LB
+database "Lightbridge DB" as DB
+participant "Lua Filter\n(model-policy.lua)" as Lua
+
+Dev -> Envoy : POST /v1/chat\nbody: { model: "deepseek-r1" }
+
+note right of Envoy
+  Project settings in DB:
+  model_policy = "allowlist"
+  allowed_models = ["gpt-4o"]
+end note
+
+group Identity & Policy Resolution
+  Envoy -> Auth : Validate API key "sk-abc..."
+  Auth -> LB : Token Exchange\n(lookup key → project)
+  LB -> DB : SELECT model_policy, allowed_models\nFROM projects WHERE id = key.project_id
+  DB --> LB : model_policy="allowlist"\nallowed_models=["gpt-4o"]
+  LB --> Auth : Project policy
+  Auth --> Envoy : Stamp headers:\n  x-model-policy: allowlist\n  x-allowed-models: gpt-4o\n  x-ai-eg-model: deepseek-r1 (from body)
+end
+
+group Lua Enforcement (filter order 13)
+  Envoy -> Lua : Run model-policy.lua
+  Lua -> Lua : x-model-policy = "allowlist"\n  allowed = ["gpt-4o"]\n  requested = "deepseek-r1"\n  "deepseek-r1" NOT in ["gpt-4o"] → DENY
+  Lua --> Envoy : 403 Forbidden
+end
+
+Envoy --> Dev : 403 Forbidden\n{ error: "model_not_allowed" }
+@enduml
