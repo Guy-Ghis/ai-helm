@@ -1,6 +1,6 @@
 # LibreChat — Presenter's Speaker Notes
 
-> **File to open**: `diagrams/librechat.drawio` (12 pages).
+> **File to open**: `diagrams/librechat.drawio` (11 pages).
 > This document gives you the words to say for each page, in order. Facts verified 2026-10-05 —
 > see [`librechat-deep-dive.md`](librechat-deep-dive.md) for sources and hands-on labs.
 > **Tip**: run labs I1 and I6 from the deep dive right before presenting so you can quote live numbers.
@@ -100,18 +100,88 @@ Open `librechat.drawio`, **Page 1**.
 
 ## Page 4 — Config Delivery
 
-> "LibreChat's behaviour — endpoints, personas, MCP servers, web search, summarization — lives in `librechat.yaml`.
-> Ours is about 950 lines in `ai-helm-values`. Five steps get it into the pod."
+### What this diagram shows
+How LibreChat's main settings file, `librechat.yaml`, travels from Git into the running pod — and why changing it
+needs one extra step.
 
-Walk the five boxes, then:
+### Set the scene (before pointing at any box)
 
-> "Here's the trap. The file is mounted with `subPath`, and LibreChat only reads it at startup anyway. So changing
-> the config does nothing to running pods. The fix is a tiny marker ConfigMap with a `generation` number; its
-> checksum is stamped on the pod template. Bump the number in the same commit, and the pods roll. It's at 14 today
-> — fourteen config rollouts."
+> "LibreChat has two kinds of settings. Secrets and connection details — passwords, database addresses, the Keycloak
+> client — are environment variables; we saw those on the previous page. Everything about *behaviour* — which models
+> users see, the personas in the picker, the MCP tools, web search, summarization — lives in one file called
+> `librechat.yaml`. LibreChat reads it from `/app/librechat.yaml`.
+>
+> That file is not baked into the Docker image. We use the upstream image unchanged, and inject our file at deploy
+> time. Ours is about 950 lines. Let's follow it from Git to the pod."
 
-> "And a second trap: if the values file were missing, the chart would render no config at all and LibreChat would
-> boot with no models. That's why the rule is 'values repo first'."
+### Walk the four numbered boxes, top to bottom
+
+**Box 1 — ai-helm-values.**
+> "It starts in our private repository, `ai-helm-values`, in `environments/prod/values/librechat-app.yaml`, under a
+> key called `config:`. This is the only place you edit it. The public `ai-helm` repo has the chart — *how* to
+> deploy — but deliberately no copy of the config — *what* is deployed. That split is ADR-0087."
+
+**Box 2 — ArgoCD.**
+> "When ArgoCD syncs `librechat-app`, it pulls two things: the chart from our OCI registry, and this values file from
+> `ai-helm-values`. Helm merges them, so `config:` becomes an ordinary chart value."
+
+**Box 3 — ConfigMap `librechat-config`.**
+> "The chart has a small template that takes `config:` and writes it, as YAML text, into a ConfigMap called
+> `librechat-config`, under a single key named `librechat`. A ConfigMap is just Kubernetes' way of storing a file."
+
+**Box 4 — LibreChat pod.**
+> "The pod mounts that one key as the file `/app/librechat.yaml`, read-only. When LibreChat starts, it reads the file
+> once, and that's the configuration it runs with."
+
+### The trap — point at the "Rollout ConfigMap" box
+
+> "Now the important part. Suppose I change a persona in `ai-helm-values` and merge. ArgoCD syncs, the ConfigMap is
+> updated — and nothing changes for users. Why?
+>
+> Two reasons. First, LibreChat reads the file **only at startup**; a running pod never looks at it again. Second,
+> the file is mounted with `subPath` — a single-file mount — and Kubernetes never refreshes `subPath` files anyway.
+> So the new config sits in the ConfigMap, but the pods keep running the old one until they happen to restart.
+>
+> The fix is this second, tiny ConfigMap, `librechat-app-config-rollout`. It holds one number: `generation`.
+> The chart computes a checksum of it and stamps it on the pod template. Change the number, the checksum changes,
+> the pod template changes — and Kubernetes does a rolling restart: new pods come up with the new file, old ones go
+> away, no downtime. It's at 14 today."
+
+### Point at the green "To change the config" box
+
+> "So the rule for anyone editing the config is three steps:
+> one, edit `config:` in `ai-helm-values`;
+> two, in the **same commit**, bump `generation` — today from 14 to 15;
+> three, merge. ArgoCD syncs and the pods roll.
+> Forget step two and your change is silently ignored — the ConfigMap looks right, so it's a confusing one to debug."
+
+### Point at the red warning box
+
+> "One more trap, the opposite way. ArgoCD is told to ignore a missing values file. If someone deleted or renamed
+> `librechat-app.yaml`, the chart would render with no `config:` at all, produce no ConfigMap, and LibreChat would
+> start with no models. ArgoCD would report success — a broken chat, not a failed deploy. That's why the rule is
+> *values repo first*: the file must exist on `ai-helm-values` before any chart change that depends on it."
+
+### Close with the note at the bottom
+
+> "In one sentence: the config travels Git → ArgoCD → ConfigMap → pod, but the pod only notices when it restarts,
+> and the `generation` number is how we make it restart on purpose."
+
+### Likely questions
+
+**Q: Why not make LibreChat reload the file automatically?**
+> LibreChat has no hot-reload for `librechat.yaml`; even without `subPath`, a restart would be needed. The
+> `generation` bump gives a controlled rolling restart instead.
+
+**Q: Why not compute the checksum from the config itself, so the bump is automatic?**
+> The config ConfigMap is rendered by our own template, outside the bjw-s library that adds the checksum annotation;
+> the library can only hash ConfigMaps it manages. The small marker ConfigMap is the workaround — at the cost of
+> remembering to bump it.
+
+**Q: How do I check which config is live?**
+> `kubectl -n converse get cm librechat-config -o jsonpath='{.data.librechat}'` shows what's in the ConfigMap;
+> compare with the pods' start time (`kubectl -n converse get pods -l app.kubernetes.io/name=librechat-app`). If
+> the ConfigMap changed after the pods started, the pods are running an older config.
 
 ---
 
@@ -184,41 +254,76 @@ Point at a few:
 > gateway, `api.ai.camer.digital`."
 
 > "Why show it here? Because it's on LibreChat's host and in its namespace, and because a developer's opencode
-> usage and their LibreChat usage land on the same per-user account at the gateway — page 11."
+> usage and their LibreChat usage land on the same per-user account at the gateway — page 10."
 
 ---
 
-## Page 9 — Networking
+## Page 9 — Code Interpreter
 
-> "Three ingresses on Traefik. The main one: `ai.camer.digital` to LibreChat on 3080, certificate from
-> cert-manager with an HTTP-01 challenge. The well-known path on the same host goes to its nginx. And `ai.kivoyo.com`,
-> a vanity domain, is redirected by a Traefik middleware — a temporary redirect: 302 for normal page loads, 307 for
-> other methods — so the path is kept and nothing gets cached permanently."
+### What this diagram shows
+What happens when a persona runs code: where the code actually executes, how it is isolated, and why it lives in
+its own namespace.
 
-> "Network policy: LibreChat's policy allows everything, and the `converse` namespace has no default-deny baseline.
-> That's a known gap — Mongo has no password, so the network is its only protection."
+### Set the scene
+
+> "Some personas — Converse, for example — can *run* code: Python for a calculation, a chart, a CSV. That code is
+> written by an AI on behalf of a user, so we treat it as untrusted. It does not run inside LibreChat. It runs in a
+> separate service, the Code Interpreter, which we host ourselves in the namespace `librechat-sandbox`. Before
+> August, LibreChat used a paid external service for this; now the code and the data never leave our cluster."
+
+### Walk the boxes, left to right
+
+**LibreChat (run code) → "code + token" → API.**
+> "When the AI decides to run code, LibreChat sends it to the Code Interpreter's API. There is no fixed password:
+> for every single request LibreChat signs a short-lived token with a private key — that's the yellow box. The API
+> checks the signature with the matching public key. A stolen token is useless after a few minutes."
+
+**API → Worker.**
+> "The API accepts the job and puts it in a queue — the Redis box on the right. The worker takes jobs off the
+> queue one by one and prepares them: which packages, how much time, what the code is allowed to do."
+
+**Worker → Sandbox runner (the red box).**
+> "This is where the code actually runs. For every execution the sandbox runner builds a fresh, throwaway jail with
+> a tool called NsJail: its own processes, its own files, a temporary user ID, and **no network**. The code gets
+> about fifteen seconds, then the jail is destroyed. The next run — even from the same user — gets a brand-new jail.
+> Up to four jobs run at the same time; the rest wait in the queue."
+
+**The three helpers on the right.**
+> "The **file server** moves files in and out — the CSV you uploaded, the chart the code produced — and stores them
+> in S3. **Tool calls** lets running code call tools in a controlled way. The **egress gateway** is the only way
+> anything can leave a jail, and only if the job was explicitly allowed. **Package setup** is a one-time job that
+> pre-installs Python and other language packages, so jails don't download anything."
+
+### The security point — the note at the bottom
+
+> "Building those jails needs Linux privileges that normal pods don't get, so this namespace is allowed
+> 'privileged' pods. That's exactly why it's not inside `converse`: the extra privileges stay here, far from
+> LibreChat and MongoDB. And it's deployed as its own ArgoCD app, not under librechart, because librechart puts
+> all its children in one namespace."
+
+### Close
+
+> "So: LibreChat signs a request, the API queues it, and the code runs once in a disposable, network-less jail —
+> on our own cluster."
+
+### Likely questions
+
+**Q: Do users share a sandbox?**
+> They share the sandbox-runner *pod*, but every execution gets its own jail that is destroyed afterwards — two
+> users' code never runs in the same jail.
+
+**Q: Why not a virtual machine per run? Isn't that safer?**
+> Yes — the service supports tiny VMs, but they need KVM, which our Hetzner cloud nodes don't offer. NsJail shares
+> the host kernel, which is the trade-off we accepted.
+
+**Q: Can the code reach the internet or our internal services?**
+> No — jails have networking disabled; the only exit is the egress gateway, and only for explicitly granted jobs.
 
 ---
 
-## Page 10 — Full Request Flow
+## Page 10 — Per-User Identity
 
-> "A user sends a message. Traefik terminates TLS, LibreChat checks its own session — no Keycloak round-trip per
-> request. It builds an OpenAI-style request to the internal gateway with its one API key — and four extra headers
-> carrying who the user is.
->
-> The gateway runs Authorino. It accepts the key, then rewrites the rate-limit identity: the account becomes the
-> user's Keycloak id, the plan becomes free or pro. The budget limiter is explicitly switched off for this internal
-> plane. Then the per-model limit: by default 60 requests per minute **per user, per model**. Then the model
-> backend, and the answer streams back."
-
-> "So: one key to authenticate, but per-user limits and per-user cost dashboards. LibreChat's own balance system
-> is turned off — the gateway is the single place that counts."
-
----
-
-## Page 11 — Per-User Identity
-
-> "This is the subtle part, so one picture just for it. Two identities on every request: the human, known to
+> "Before we trace a full request, one subtle idea you need for it. There are two identities on every request: the human, known to
 > LibreChat through Keycloak, and LibreChat itself, known to the gateway through its key. The bridge is LibreChat's
 > header templating — `{{LIBRECHAT_USER_OPENIDID}}` becomes the Keycloak subject."
 
@@ -229,24 +334,26 @@ Point at a few:
 > guard, every such request would have pooled into one fake account. The gateway now ignores any value containing
 > `{{`."
 
-> "Because the account key is the same Keycloak id opencode uses, a person's chat and coding usage share one account."
+> "Because the account key is the same Keycloak id opencode uses, a person's chat and coding usage share one account.
+>
+> Keep this picture in mind — on the next page we follow one real chat message end to end, and you'll see exactly
+> where this happens."
 
 ---
 
-## Page 12 — Self-Hosted Code Interpreter
+## Page 11 — Full Request Flow
 
-> "When a persona runs code, LibreChat calls our own Code Interpreter — the open-source clickhouse service, built
-> from our fork because upstream publishes no images."
+> "Now everything together. A user sends a message. Traefik terminates TLS, LibreChat checks its own session — no Keycloak round-trip per
+> request. It builds an OpenAI-style request to the internal gateway with its one API key — and four extra headers
+> carrying who the user is.
+>
+> The gateway runs Authorino — the identity step from the previous page. It accepts the key, then rewrites the rate-limit identity: the account becomes the
+> user's Keycloak id, the plan becomes free or pro. The budget limiter is explicitly switched off for this internal
+> plane. Then the per-model limit: by default 60 requests per minute **per user, per model**. Then the model
+> backend, and the answer streams back."
 
-> "Auth: no static key. LibreChat signs a short-lived Ed25519 token per request; the service verifies it with the
-> public half."
-
-> "Isolation: user code runs in NsJail, which needs SYS_ADMIN-level capabilities because our nodes don't offer KVM
-> for the safer microVM mode. That requires privileged Pod Security — so it lives in its own namespace,
-> `librechat-sandbox`, and the elevation never touches LibreChat or Mongo. Sandboxes have no network; the only
-> outbound hole is the file server to object storage."
-
-> "Limits: one sandbox runner, because the packages volume is ReadWriteOnce."
+> "So: one key to authenticate, but per-user limits and per-user cost dashboards. LibreChat's own balance system
+> is turned off — the gateway is the single place that counts."
 
 ---
 

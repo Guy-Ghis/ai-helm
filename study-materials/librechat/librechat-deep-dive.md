@@ -13,7 +13,7 @@
 > | [`guide.md`](guide.md) | Exhaustive reference — every env var, secret, port, template, line by line |
 > | [`librechat_presentation.md`](librechat_presentation.md) | Presentation order + per-diagram summary |
 > | [`presentation-speaker-notes.md`](presentation-speaker-notes.md) | What to say, page by page, plus anticipated Q&A |
-> | [`diagrams/librechat.drawio`](diagrams/librechat.drawio) | The 12 presentation diagrams |
+> | [`diagrams/librechat.drawio`](diagrams/librechat.drawio) | The 11 presentation diagrams |
 > | [`diagram.drawio`](diagram.drawio) | Two one-page overviews (GitOps structure, runtime integrations) |
 
 ---

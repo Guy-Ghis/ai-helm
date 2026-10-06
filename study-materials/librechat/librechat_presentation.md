@@ -1,6 +1,6 @@
 # LibreChat — Complete Presentation Guide
 
-> **File to open**: `diagrams/librechat.drawio` (12 pages — use the page tabs at the bottom).
+> **File to open**: `diagrams/librechat.drawio` (11 pages — use the page tabs at the bottom).
 > **Verified**: 2026-10-05 against `ai-helm@main`, `ai-helm-values@main` and the live `home-remote` cluster.
 > Deeper material: [`librechat-deep-dive.md`](librechat-deep-dive.md) (concepts + labs + quiz) ·
 > [`guide.md`](guide.md) (line-by-line reference) · [`presentation-speaker-notes.md`](presentation-speaker-notes.md) (script).
@@ -19,10 +19,9 @@
 | 6 | Page 6 | Secrets Pipeline — External Secrets Operator + the internal CA |
 | 7 | Page 7 | Agent Seed Job — PostSync, two-phase upsert, public grant, prune |
 | 8 | Page 8 | opencode Well-Known — a neighbour on the same host (now under `ai-models`) |
-| 9 | Page 9 | Networking — Ingresses, Services, TLS, vanity redirect |
-| 10 | Page 10 | Full Request Flow — browser to model response |
-| 11 | Page 11 | Per-User Identity — how one shared key still gives per-user limits |
-| 12 | Page 12 | Self-Hosted Code Interpreter — the sandbox in `librechat-sandbox` |
+| 9 | Page 9 | Code Interpreter — where user code runs, in a throwaway jail in `librechat-sandbox` |
+| 10 | Page 10 | Per-User Identity — how one shared key still gives per-user limits |
+| 11 | Page 11 | Full Request Flow — browser to model response, everything together |
 
 ---
 
@@ -162,20 +161,30 @@ its per-model tuning is derived from the model catalog. Same host as LibreChat, 
 
 ---
 
-## Part 9 — Networking
+## Part 9 — Code Interpreter
 
-| Ingress (Traefik) | Host / path | Notes |
-|---|---|---|
-| `librechat-app` | `ai.camer.digital` `/` | → `librechat-app:3080`; TLS `ai.camer.digital-tls` by `cert-home-cert-http` (HTTP-01) |
-| `librechat-kivoyo-redirect` | `ai.kivoyo.com` | Middleware `kivoyo-redirect`: **302 on GET, 307 on HEAD/other methods** → `ai.camer.digital` (path kept) |
-| `models-opencode-wellknown` | `ai.camer.digital` `/opencode/.well-known/opencode` (Exact) | other Application, same TLS secret |
-
-Services: `librechat-app:3080`, `librechat-app-db` + headless `:27017`, `librechat-search:7700`.
-HPA 1–4 (CPU 70% / memory 80%). NetworkPolicy on LibreChat is **allow-all**; `converse` has no default-deny baseline.
+`execute_code` → `LIBRECHAT_CODE_BASEURL=http://codeapi-api.librechat-sandbox.svc.cluster.local:3112/v1`.
+LibreChat mints a short-lived **Ed25519 JWT** per request (`CODEAPI_JWT_*`, kid `lc-codeapi-2026-05`); the API verifies it
+with the public key. Components: api, service-worker, sandbox-runner (NsJail — needs `SYS_ADMIN`), file-server,
+tool-call-server, egress-gateway, package-init. Own namespace with **privileged** Pod Security so the elevation
+doesn't touch LibreChat/Mongo; reuses redis-ha + the S3 bucket; Cilium policy lets only file-server reach object
+storage; RWO PVC ⇒ 1 sandbox-runner replica. Images from the `ADORSYS-GIS/code-interpreter` fork, pinned by SHA.
 
 ---
 
-## Part 10 — Full Request Flow
+---
+
+## Part 10 — Per-User Identity
+
+Two identities per request: *user → LibreChat* (OIDC) and *LibreChat → gateway* (static apiKey). The bridge is
+LibreChat's header templating (`{{LIBRECHAT_USER_OPENIDID}}` = Keycloak `sub`). Authorino trusts it only on the
+internal plane, **overwrites** descriptors (client can't choose its plan), and ignores values that still contain
+`{{` (a real placeholder leak seen 2026-08-01). `X-LibreChat-Role` is LibreChat's role (USER/ADMIN), so users map to
+`free`. Email/name feed the per-user Grafana boards.
+
+---
+
+## Part 11 — Full Request Flow
 
 ```
 Browser ─HTTPS─► Traefik ─► librechat-app:3080
@@ -194,27 +203,6 @@ Browser ─HTTPS─► Traefik ─► librechat-app:3080
 
 **Key insight**: LibreChat authenticates with **one** key, but the gateway **attributes and rate-limits per user**,
 using the same account key as that person's opencode usage. LibreChat's own `balance` is off.
-
----
-
-## Part 11 — Per-User Identity (new)
-
-Two identities per request: *user → LibreChat* (OIDC) and *LibreChat → gateway* (static apiKey). The bridge is
-LibreChat's header templating (`{{LIBRECHAT_USER_OPENIDID}}` = Keycloak `sub`). Authorino trusts it only on the
-internal plane, **overwrites** descriptors (client can't choose its plan), and ignores values that still contain
-`{{` (a real placeholder leak seen 2026-08-01). `X-LibreChat-Role` is LibreChat's role (USER/ADMIN), so users map to
-`free`. Email/name feed the per-user Grafana boards.
-
----
-
-## Part 12 — Self-Hosted Code Interpreter (new)
-
-`execute_code` → `LIBRECHAT_CODE_BASEURL=http://codeapi-api.librechat-sandbox.svc.cluster.local:3112/v1`.
-LibreChat mints a short-lived **Ed25519 JWT** per request (`CODEAPI_JWT_*`, kid `lc-codeapi-2026-05`); the API verifies it
-with the public key. Components: api, service-worker, sandbox-runner (NsJail — needs `SYS_ADMIN`), file-server,
-tool-call-server, egress-gateway, package-init. Own namespace with **privileged** Pod Security so the elevation
-doesn't touch LibreChat/Mongo; reuses redis-ha + the S3 bucket; Cilium policy lets only file-server reach object
-storage; RWO PVC ⇒ 1 sandbox-runner replica. Images from the `ADORSYS-GIS/code-interpreter` fork, pinned by SHA.
 
 ---
 
