@@ -1,219 +1,219 @@
 <mxfile host="65bd71144e" pages="2">
     <diagram name="librechat-gitops-structure" id="LC-GITOPS">
-        <mxGraphModel dx="1698" dy="1449" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="1904" dy="1116" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="title" value="&lt;b style='font-size:16px'&gt;LibreChat — GitOps Chart Structure&lt;/b&gt;&lt;br&gt;charts/librechart (orchestrator) → 3 leaf Applications on home-remote" style="text;html=1;align=center;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-                    <mxGeometry x="300" y="20" width="900" height="50" as="geometry"/>
+                <mxCell id="title" parent="1" style="text;html=1;align=center;strokeColor=none;fillColor=none;" value="LibreChat — GitOps Chart Structure (verified 2026-10-05)&lt;br&gt;charts/librechart (orchestrator) → 2 leaf Applications on home-remote (+ neighbours)" vertex="1">
+                    <mxGeometry height="50" width="900" x="300" y="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="repo-box" value="&lt;b&gt;ai-helm (this repo)&lt;/b&gt;" style="swimlane;startSize=28;fillColor=#EDE7F6;strokeColor=#4527A0;rounded=1;arcSize=8;" parent="1" vertex="1">
-                    <mxGeometry x="30" y="90" width="340" height="520" as="geometry"/>
+                <mxCell id="repo-box" parent="1" style="swimlane;startSize=28;fillColor=#EDE7F6;strokeColor=#4527A0;rounded=1;arcSize=8;" value="&lt;b&gt;ai-helm (this repo)&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="520" width="340" x="30" y="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="orch-chart" value="&lt;b&gt;charts/librechart/&lt;/b&gt;&lt;br&gt;Orchestrator chart&lt;br&gt;&lt;font color='#6A1B9A'&gt;values.yaml&lt;/font&gt; — ArgoCD wiring + children list&lt;br&gt;&lt;font color='#6A1B9A'&gt;templates/applicationset.yaml&lt;/font&gt;&lt;br&gt;&lt;font color='#6A1B9A'&gt;templates/_helpers.tpl&lt;/font&gt; — ADR-0017 guard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" parent="repo-box" vertex="1">
-                    <mxGeometry x="20" y="40" width="300" height="90" as="geometry"/>
+                <mxCell id="orch-chart" parent="repo-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" value="&lt;b&gt;charts/librechart/&lt;/b&gt;&lt;br&gt;Orchestrator chart&lt;br&gt;&lt;font color=&#39;#6A1B9A&#39;&gt;values.yaml&lt;/font&gt; — ArgoCD wiring + children list&lt;br&gt;&lt;font color=&#39;#6A1B9A&#39;&gt;templates/applicationset.yaml&lt;/font&gt;&lt;br&gt;&lt;font color=&#39;#6A1B9A&#39;&gt;templates/_helpers.tpl&lt;/font&gt; — ADR-0017 guard" vertex="1">
+                    <mxGeometry height="90" width="300" x="20" y="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="leaf1-chart" value="&lt;b&gt;charts/librechat-search/&lt;/b&gt;&lt;br&gt;Depends: upstream meilisearch chart&lt;br&gt;No own templates" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;" parent="repo-box" vertex="1">
-                    <mxGeometry x="20" y="160" width="300" height="60" as="geometry"/>
+                <mxCell id="leaf1-chart" parent="repo-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;" value="&lt;b&gt;charts/librechat-search/&lt;/b&gt;&lt;br&gt;Depends: upstream meilisearch chart&lt;br&gt;No own templates" vertex="1">
+                    <mxGeometry height="60" width="300" x="20" y="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="leaf2-chart" value="&lt;b&gt;charts/librechat-app/&lt;/b&gt;&lt;br&gt;Depends: bjw-template 4.6.2 + mongodb 1.7.6&lt;br&gt;templates/: configmap, externalsecret-{app,redis,s3},&lt;br&gt;certificate-internal-ca, agent-seed-job, pdb, _mongo_uri.tpl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" parent="repo-box" vertex="1">
-                    <mxGeometry x="20" y="250" width="300" height="90" as="geometry"/>
+                <mxCell id="leaf2-chart" parent="repo-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" value="charts/librechat-app/&lt;br&gt;Depends: bjw-template 4.6.2 + mongodb 1.7.6&lt;br&gt;templates/: configmap, externalsecret-{app,redis,s3},&lt;br&gt;certificate-internal-ca, agent-seed-job, pdb, _mongo_uri.tpl&lt;br&gt;files/seed-agents.js · values.yaml 814 lines" vertex="1">
+                    <mxGeometry height="90" width="300" x="20" y="250" as="geometry"/>
                 </mxCell>
-                <mxCell id="leaf3-chart" value="&lt;b&gt;charts/librechat-opencode-wellknown/&lt;/b&gt;&lt;br&gt;Depends: bjw-template (nginx)&lt;br&gt;values.yaml: 2125 lines / 110 KB&lt;br&gt;templates/configmap.yaml — JSON → ConfigMap" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;" parent="repo-box" vertex="1">
-                    <mxGeometry x="20" y="370" width="300" height="80" as="geometry"/>
+                <mxCell id="leaf3-chart" parent="repo-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;dashed=1;" value="charts/librechat-opencode-wellknown/&lt;br&gt;NOT a librechart leaf any more — deployed by the&lt;br&gt;ai-models ApplicationSet as models-opencode-wellknown&lt;br&gt;(ADR-0125) · values.yaml 2245 lines" vertex="1">
+                    <mxGeometry height="80" width="300" x="20" y="370" as="geometry"/>
                 </mxCell>
-                <mxCell id="oci-arrow" value="merge to main&lt;br&gt;→ OCI publish" style="edgeStyle=orthogonalEdgeStyle;curved=1;dashed=1;strokeColor=#4527A0;fontSize=10;" parent="1" source="repo-box" target="oci-reg" edge="1">
+                <mxCell id="oci-arrow" edge="1" parent="1" source="repo-box" style="edgeStyle=orthogonalEdgeStyle;curved=1;dashed=1;strokeColor=#4527A0;fontSize=10;" target="oci-reg" value="merge to main&lt;br&gt;→ OCI publish">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="oci-reg" value="&lt;b&gt;OCI Registry&lt;/b&gt;&lt;br&gt;oci://ghcr.io/adorsys-gis/charts&lt;br&gt;chartVersionRange: &gt;=0.0.0 (float)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E8EAF6;strokeColor=#3949AB;" parent="1" vertex="1">
-                    <mxGeometry x="470" y="140" width="200" height="80" as="geometry"/>
+                <mxCell id="oci-reg" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E8EAF6;strokeColor=#3949AB;" value="&lt;b&gt;OCI Registry&lt;/b&gt;&lt;br&gt;oci://ghcr.io/adorsys-gis/charts&lt;br&gt;chartVersionRange: &gt;=0.0.0 (float)" vertex="1">
+                    <mxGeometry height="80" width="200" x="470" y="140" as="geometry"/>
                 </mxCell>
-                <mxCell id="values-repo" value="&lt;b&gt;ai-helm-values (private)&lt;/b&gt;&lt;br&gt;environments/prod/values/librechat-app.yaml&lt;br&gt;($values ref — the librechat.yaml config:)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFF8E1;strokeColor=#F57F17;" parent="1" vertex="1">
-                    <mxGeometry x="470" y="260" width="200" height="80" as="geometry"/>
+                <mxCell id="values-repo" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFF8E1;strokeColor=#F57F17;" value="ai-helm-values (private)&lt;br&gt;environments/prod/values/librechat-app.yaml&lt;br&gt;($values ref — config:, generation &quot;14&quot;, agentSeed)" vertex="1">
+                    <mxGeometry height="80" width="200" x="470" y="260" as="geometry"/>
                 </mxCell>
-                <mxCell id="argocd-box" value="&lt;b&gt;ArgoCD — admin@homeos cluster&lt;/b&gt;&lt;br&gt;namespace: argocd / project: ai" style="swimlane;startSize=28;fillColor=#E8F5E9;strokeColor=#2E7D32;rounded=1;arcSize=8;" parent="1" vertex="1">
-                    <mxGeometry x="760" y="90" width="360" height="280" as="geometry"/>
+                <mxCell id="argocd-box" parent="1" style="swimlane;startSize=28;fillColor=#E8F5E9;strokeColor=#2E7D32;rounded=1;arcSize=8;" value="&lt;b&gt;ArgoCD — admin@homeos cluster&lt;/b&gt;&lt;br&gt;namespace: argocd / project: ai" vertex="1">
+                    <mxGeometry height="280" width="360" x="760" y="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="appset" value="&lt;b&gt;ApplicationSet: librechat&lt;/b&gt;&lt;br&gt;List generator — 3 elements&lt;br&gt;goTemplate: true" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;" parent="argocd-box" vertex="1">
-                    <mxGeometry x="60" y="50" width="240" height="70" as="geometry"/>
+                <mxCell id="appset" parent="argocd-box" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;" value="ApplicationSet: librechat&lt;br&gt;List generator — 2 elements&lt;br&gt;goTemplate: true" vertex="1">
+                    <mxGeometry height="70" width="240" x="60" y="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="app-s" value="App: librechat-search&lt;br&gt;wave -1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=10;" parent="argocd-box" vertex="1">
-                    <mxGeometry x="30" y="160" width="140" height="40" as="geometry"/>
+                <mxCell id="app-s" parent="argocd-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=10;" value="App: librechat-search&lt;br&gt;wave -1" vertex="1">
+                    <mxGeometry height="40" width="140" x="30" y="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="app-m" value="App: librechat-app&lt;br&gt;wave 0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=10;" parent="argocd-box" vertex="1">
-                    <mxGeometry x="185" y="160" width="140" height="40" as="geometry"/>
+                <mxCell id="app-m" parent="argocd-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=10;" value="App: librechat-app&lt;br&gt;wave 0" vertex="1">
+                    <mxGeometry height="40" width="140" x="185" y="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="app-w" value="App: librechat-opencode-wellknown&lt;br&gt;wave 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;fontSize=10;" parent="argocd-box" vertex="1">
-                    <mxGeometry x="90" y="220" width="200" height="40" as="geometry"/>
+                <mxCell id="app-w" parent="argocd-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;fontSize=10;dashed=1;" value="App: models-opencode-wellknown&lt;br&gt;(from the ai-models AppSet, wave 1)" vertex="1">
+                    <mxGeometry height="40" width="200" x="90" y="220" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-as-s" style="edgeStyle=orthogonalEdgeStyle;" parent="argocd-box" source="appset" target="app-s" edge="1">
+                <mxCell id="e-as-s" edge="1" parent="argocd-box" source="appset" style="edgeStyle=orthogonalEdgeStyle;" target="app-s">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-as-m" style="edgeStyle=orthogonalEdgeStyle;" parent="argocd-box" source="appset" target="app-m" edge="1">
+                <mxCell id="e-as-m" edge="1" parent="argocd-box" source="appset" style="edgeStyle=orthogonalEdgeStyle;" target="app-m">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-as-w" style="edgeStyle=orthogonalEdgeStyle;" parent="argocd-box" source="appset" target="app-w" edge="1">
+                <mxCell id="e-as-w" edge="1" parent="argocd-box" source="appset" style="edgeStyle=orthogonalEdgeStyle;" target="app-w">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-oci-as" value="Source A: chart" style="edgeStyle=orthogonalEdgeStyle;curved=1;dashed=1;fontSize=10;" parent="1" source="oci-reg" target="appset" edge="1">
+                <mxCell id="e-oci-as" edge="1" parent="1" source="oci-reg" style="edgeStyle=orthogonalEdgeStyle;curved=1;dashed=1;fontSize=10;" target="appset" value="Source A: chart">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-val-as" value="Source B: values" style="edgeStyle=orthogonalEdgeStyle;curved=1;dashed=1;strokeColor=#F57F17;fontSize=10;" parent="1" source="values-repo" target="appset" edge="1">
+                <mxCell id="e-val-as" edge="1" parent="1" source="values-repo" style="edgeStyle=orthogonalEdgeStyle;curved=1;dashed=1;strokeColor=#F57F17;fontSize=10;" target="appset" value="Source B: values">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="wl-box" value="&lt;b&gt;home-remote cluster (Hetzner k3s) — namespace: converse&lt;/b&gt;" style="swimlane;startSize=28;fillColor=#FFF9E6;strokeColor=#D4A843;rounded=1;arcSize=8;" parent="1" vertex="1">
-                    <mxGeometry x="30" y="680" width="1090" height="350" as="geometry"/>
+                <mxCell id="wl-box" parent="1" style="swimlane;startSize=28;fillColor=#FFF9E6;strokeColor=#D4A843;rounded=1;arcSize=8;" value="&lt;b&gt;home-remote cluster (Hetzner k3s) — namespace: converse&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="350" width="1090" x="30" y="680" as="geometry"/>
                 </mxCell>
-                <mxCell id="meili-pod" value="&lt;b&gt;Meilisearch&lt;/b&gt;&lt;br&gt;Service: librechat-search:7700&lt;br&gt;Plain HTTP, no TLS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=11;" parent="wl-box" vertex="1">
-                    <mxGeometry x="30" y="50" width="200" height="70" as="geometry"/>
+                <mxCell id="meili-pod" parent="wl-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=11;" value="Meilisearch v1.35.0&lt;br&gt;Service: librechat-search:7700&lt;br&gt;Plain HTTP, no TLS" vertex="1">
+                    <mxGeometry height="70" width="200" x="30" y="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="lc-pod" value="&lt;b&gt;LibreChat Deployment&lt;/b&gt;&lt;br&gt;ghcr.io/danny-avila/librechat:v0.8.7&lt;br&gt;replicas: 2 (HPA min:1 max:4)&lt;br&gt;Service: librechat-app:3080&lt;br&gt;Ingress: ai.camer.digital → :3080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;fontStyle=1;" parent="wl-box" vertex="1">
-                    <mxGeometry x="280" y="40" width="260" height="100" as="geometry"/>
+                <mxCell id="lc-pod" parent="wl-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;fontStyle=1;" value="LibreChat Deployment&lt;br&gt;ghcr.io/danny-avila/librechat:v0.8.7&lt;br&gt;replicas: 2 (HPA min:1 max:4)&lt;br&gt;Service: librechat-app:3080&lt;br&gt;Ingress: ai.camer.digital → :3080" vertex="1">
+                    <mxGeometry height="100" width="260" x="280" y="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="mongo-pod" value="&lt;b&gt;MongoDB StatefulSet&lt;/b&gt;&lt;br&gt;(helmforge/mongodb 1.7.6)&lt;br&gt;librechat-app-db-0.…-headless:27017&lt;br&gt;30 Gi PVC, auth: disabled" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFE0B2;strokeColor=#E65100;fontSize=10;" parent="wl-box" vertex="1">
-                    <mxGeometry x="600" y="40" width="190" height="90" as="geometry"/>
+                <mxCell id="mongo-pod" parent="wl-box" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFE0B2;strokeColor=#E65100;fontSize=10;" value="MongoDB 8.2.6 StatefulSet&lt;br&gt;(helmforge/mongodb 1.7.6)&lt;br&gt;librechat-app-db-0.…-headless:27017&lt;br&gt;30 Gi PVC, auth: disabled" vertex="1">
+                    <mxGeometry height="90" width="190" x="600" y="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="nginx-pod" value="&lt;b&gt;nginx (opencode well-known)&lt;/b&gt;&lt;br&gt;replicas: 2&lt;br&gt;Serves: /opencode/.well-known/opencode&lt;br&gt;ConfigMap → JSON payload" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;fontSize=10;" parent="wl-box" vertex="1">
-                    <mxGeometry x="850" y="50" width="210" height="80" as="geometry"/>
+                <mxCell id="nginx-pod" parent="wl-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#558B2F;fontSize=10;dashed=1;" value="nginx (opencode well-known)&lt;br&gt;models-opencode-wellknown, replicas: 2&lt;br&gt;Serves: /opencode/.well-known/opencode&lt;br&gt;(ai-models child — not LibreChat)" vertex="1">
+                    <mxGeometry height="80" width="210" x="850" y="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="cm-config" value="ConfigMap: librechat-config&lt;br&gt;key: librechat (the YAML)&lt;br&gt;subPath mount → /app/librechat.yaml" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" parent="wl-box" vertex="1">
-                    <mxGeometry x="280" y="175" width="200" height="60" as="geometry"/>
+                <mxCell id="cm-config" parent="wl-box" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" value="ConfigMap: librechat-config&lt;br&gt;key: librechat (the YAML)&lt;br&gt;subPath mount → /app/librechat.yaml" vertex="1">
+                    <mxGeometry height="60" width="200" x="280" y="175" as="geometry"/>
                 </mxCell>
-                <mxCell id="cm-rollout" value="ConfigMap: librechat-app-config-rollout&lt;br&gt;data.generation — bump → pods roll" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" parent="wl-box" vertex="1">
-                    <mxGeometry x="500" y="175" width="210" height="50" as="geometry"/>
+                <mxCell id="cm-rollout" parent="wl-box" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" value="ConfigMap: librechat-app-config-rollout&lt;br&gt;data.generation (live &quot;14&quot;) — bump → pods roll" vertex="1">
+                    <mxGeometry height="50" width="210" x="500" y="175" as="geometry"/>
                 </mxCell>
-                <mxCell id="seed-job" value="&lt;b&gt;Job: agent-seed&lt;/b&gt;&lt;br&gt;ArgoCD hook: PostSync&lt;br&gt;delete-policy: BeforeHookCreation&lt;br&gt;node seed-agents.js via LibreChat image" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=9;" parent="wl-box" vertex="1">
-                    <mxGeometry x="280" y="255" width="260" height="60" as="geometry"/>
+                <mxCell id="seed-job" parent="wl-box" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=9;" value="Job: agent-seed&lt;br&gt;ArgoCD hook: PostSync&lt;br&gt;delete-policy: BeforeHookCreation&lt;br&gt;upsert by name → public grant → prune" vertex="1">
+                    <mxGeometry height="60" width="260" x="280" y="255" as="geometry"/>
                 </mxCell>
-                <mxCell id="ca-cert" value="Certificate: librechat-internal-ca&lt;br&gt;issuer: self-signed-ca (ClusterIssuer)&lt;br&gt;ca.crt → /etc/internal-ca&lt;br&gt;(NODE_EXTRA_CA_CERTS + REDIS_CA)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#E8EAF6;strokeColor=#3949AB;fontSize=9;" parent="wl-box" vertex="1">
-                    <mxGeometry x="30" y="160" width="220" height="70" as="geometry"/>
+                <mxCell id="ca-cert" parent="wl-box" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=10;fillColor=#E8EAF6;strokeColor=#3949AB;fontSize=9;" value="Certificate: librechat-internal-ca&lt;br&gt;issuer: self-signed-ca (ClusterIssuer)&lt;br&gt;ca.crt → /etc/internal-ca&lt;br&gt;(NODE_EXTRA_CA_CERTS + REDIS_CA)" vertex="1">
+                    <mxGeometry height="70" width="220" x="30" y="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="eso-secrets" value="ExternalSecrets (ESO)&lt;br&gt;Store: ssegning-aws&lt;br&gt;librechat-main-config / librechat-config&lt;br&gt;librechat-openid-config / librechat-meili-config&lt;br&gt;librechat-mcp-{cd,github,coder} / librechat-skills-sync&lt;br&gt;librechat-code-config / librechat-websearch-config&lt;br&gt;librechat-s3-config / redis-ha-redis-auth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=9;" parent="wl-box" vertex="1">
-                    <mxGeometry x="600" y="165" width="460" height="110" as="geometry"/>
+                <mxCell id="eso-secrets" parent="wl-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=9;" value="ExternalSecrets (ESO) — 13, all SecretSynced&lt;br&gt;Store: ssegning-aws&lt;br&gt;librechat-main-config / librechat-config&lt;br&gt;librechat-openid-config / librechat-meili-config&lt;br&gt;librechat-mcp-{cd,github,coder} / librechat-skills-sync&lt;br&gt;librechat-codeapi-jwt / librechat-code-config&lt;br&gt;librechat-websearch-config / librechat-s3-config / redis-ha-redis-auth" vertex="1">
+                    <mxGeometry height="110" width="460" x="600" y="165" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-meili" style="edgeStyle=orthogonalEdgeStyle;" parent="wl-box" source="lc-pod" target="meili-pod" edge="1">
+                <mxCell id="e-lc-meili" edge="1" parent="wl-box" source="lc-pod" style="edgeStyle=orthogonalEdgeStyle;" target="meili-pod">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-mongo" style="edgeStyle=orthogonalEdgeStyle;" parent="wl-box" source="lc-pod" target="mongo-pod" edge="1">
+                <mxCell id="e-lc-mongo" edge="1" parent="wl-box" source="lc-pod" style="edgeStyle=orthogonalEdgeStyle;" target="mongo-pod">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-cm-lc" style="dashed=1;" parent="wl-box" source="cm-config" target="lc-pod" edge="1">
+                <mxCell id="e-cm-lc" edge="1" parent="wl-box" source="cm-config" style="dashed=1;" target="lc-pod">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-eso-lc" style="dashed=1;" parent="wl-box" source="eso-secrets" target="lc-pod" edge="1">
+                <mxCell id="e-eso-lc" edge="1" parent="wl-box" source="eso-secrets" style="dashed=1;" target="lc-pod">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-seed-mongo" value="direct Mongo write" style="dashed=1;strokeColor=#C62828;fontSize=9;" parent="wl-box" source="seed-job" target="mongo-pod" edge="1">
+                <mxCell id="e-seed-mongo" edge="1" parent="wl-box" source="seed-job" style="dashed=1;strokeColor=#C62828;fontSize=9;" target="mongo-pod" value="direct Mongo write">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-apps-meili" value="syncs" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#C62828;dashed=1;" parent="1" source="app-s" target="meili-pod" edge="1">
+                <mxCell id="e-apps-meili" edge="1" parent="1" source="app-s" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#C62828;dashed=1;" target="meili-pod" value="syncs">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-apps-lc" value="syncs" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#1565C0;dashed=1;" parent="1" source="app-m" target="lc-pod" edge="1">
+                <mxCell id="e-apps-lc" edge="1" parent="1" source="app-m" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#1565C0;dashed=1;" target="lc-pod" value="syncs">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-apps-nginx" value="syncs" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#558B2F;dashed=1;" parent="1" source="app-w" target="nginx-pod" edge="1">
+                <mxCell id="e-apps-nginx" edge="1" parent="1" source="app-w" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#558B2F;dashed=1;" target="nginx-pod" value="syncs">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
     <diagram name="librechat-runtime-integrations" id="LC-RUNTIME">
-        <mxGraphModel dx="764" dy="652" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+        <mxGraphModel dx="1318" dy="772" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="title2" value="&lt;b style='font-size:16px'&gt;LibreChat — Runtime Integration Map&lt;/b&gt;&lt;br&gt;Every connection the LibreChat pod makes at runtime" style="text;html=1;align=center;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-                    <mxGeometry x="400" y="20" width="800" height="50" as="geometry"/>
+                <mxCell id="title2" parent="1" style="text;html=1;align=center;strokeColor=none;fillColor=none;" value="&lt;b style=&#39;font-size:16px&#39;&gt;LibreChat — Runtime Integration Map&lt;/b&gt;&lt;br&gt;Every connection the LibreChat pod makes at runtime" vertex="1">
+                    <mxGeometry height="50" width="800" x="400" y="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="browser" value="&lt;b&gt;Browser User&lt;/b&gt;&lt;br&gt;https://ai.camer.digital" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="100" width="160" height="70" as="geometry"/>
+                <mxCell id="browser" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=11;" value="&lt;b&gt;Browser User&lt;/b&gt;&lt;br&gt;https://ai.camer.digital" vertex="1">
+                    <mxGeometry height="70" width="160" x="40" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="opencode-cli" value="&lt;b&gt;opencode CLI&lt;/b&gt;&lt;br&gt;opencode auth login&lt;br&gt;https://ai.camer.digital/opencode" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="220" width="160" height="70" as="geometry"/>
+                <mxCell id="opencode-cli" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=10;" value="&lt;b&gt;opencode CLI&lt;/b&gt;&lt;br&gt;opencode auth login&lt;br&gt;https://ai.camer.digital/opencode" vertex="1">
+                    <mxGeometry height="70" width="160" x="40" y="220" as="geometry"/>
                 </mxCell>
-                <mxCell id="traefik" value="&lt;b&gt;Traefik Ingress&lt;/b&gt;&lt;br&gt;ai.camer.digital&lt;br&gt;TLS: cert-home-cert-http (ACME HTTP-01)&lt;br&gt;ai.kivoyo.com → 302 redirect" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B2DFDB;strokeColor=#00695C;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="270" y="115" width="230" height="80" as="geometry"/>
+                <mxCell id="traefik" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B2DFDB;strokeColor=#00695C;fontSize=10;" value="&lt;b&gt;Traefik Ingress&lt;/b&gt;&lt;br&gt;ai.camer.digital&lt;br&gt;TLS: cert-home-cert-http (ACME HTTP-01)&lt;br&gt;ai.kivoyo.com → 302 redirect" vertex="1">
+                    <mxGeometry height="80" width="230" x="270" y="115" as="geometry"/>
                 </mxCell>
-                <mxCell id="lc-centre" value="&lt;b&gt;LibreChat Pod&lt;/b&gt;&lt;br&gt;:3080 — node process&lt;br&gt;UID 1000 (node user)&lt;br&gt;REDIS_KEY_PREFIX: librechat-prod-v2&lt;br&gt;subPath mount: /app/librechat.yaml&lt;br&gt;NODE_EXTRA_CA_CERTS: /etc/internal-ca/ca.crt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1565C0;fontSize=11;fontStyle=1;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="200" width="280" height="130" as="geometry"/>
+                <mxCell id="lc-centre" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1565C0;fontSize=11;fontStyle=1;strokeWidth=2;" value="&lt;b&gt;LibreChat Pod&lt;/b&gt;&lt;br&gt;:3080 — node process&lt;br&gt;UID 1000 (node user)&lt;br&gt;REDIS_KEY_PREFIX: librechat-prod-v2&lt;br&gt;subPath mount: /app/librechat.yaml&lt;br&gt;NODE_EXTRA_CA_CERTS: /etc/internal-ca/ca.crt" vertex="1">
+                    <mxGeometry height="130" width="280" x="580" y="200" as="geometry"/>
                 </mxCell>
-                <mxCell id="nginx-rt" value="&lt;b&gt;nginx pod&lt;/b&gt;&lt;br&gt;/opencode/.well-known/opencode&lt;br&gt;Serves 110 KB JSON&lt;br&gt;(@vymalo/opencode-oauth2, -models-info,&lt;br&gt;-ratelimit, -browser, opencode-skills)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEDC8;strokeColor=#558B2F;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="270" y="300" width="260" height="90" as="geometry"/>
+                <mxCell id="nginx-rt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEDC8;strokeColor=#558B2F;fontSize=10;" value="nginx pod (ai-models child)&lt;br&gt;/opencode/.well-known/opencode&lt;br&gt;@vymalo/opencode-lightbridge (authz-idp,&lt;br&gt;device_code), -models-info, -ratelimit,&lt;br&gt;-browser, opencode-skills-collection" vertex="1">
+                    <mxGeometry height="90" width="260" x="270" y="300" as="geometry"/>
                 </mxCell>
-                <mxCell id="keycloak" value="&lt;b&gt;Keycloak&lt;/b&gt;&lt;br&gt;auth.verif.fyi/realms/camer-digital&lt;br&gt;Client: converse&lt;br&gt;Scopes: openid profile email librechat offline_access&lt;br&gt;OPENID_AUTO_REDIRECT: true&lt;br&gt;OPENID_REUSE_TOKENS: true" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCBC;strokeColor=#BF360C;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="960" y="80" width="280" height="100" as="geometry"/>
+                <mxCell id="keycloak" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCBC;strokeColor=#BF360C;fontSize=10;" value="Keycloak&lt;br&gt;auth.verif.fyi/realms/camer-digital&lt;br&gt;Client: converse&lt;br&gt;Scopes: openid profile email librechat offline_access&lt;br&gt;OPENID_AUTO_REDIRECT + OPENID_REUSE_TOKENS: true&lt;br&gt;OPENID_REQUIRED_ROLE: off (open beta)" vertex="1">
+                    <mxGeometry height="100" width="280" x="960" y="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="int-gw" value="&lt;b&gt;core-gateway-internal&lt;/b&gt;&lt;br&gt;envoy-gateway-system.svc.cluster.local&lt;br&gt;TLS (self-signed-ca) — internal plane&lt;br&gt;Auth: CONVERSE_OPENAI_API_KEY&lt;br&gt;x-billing-plan → internal (uncapped)&lt;br&gt;IMAGE_GEN_OAI_BASEURL (gemini-2.5-flash-image)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;fontSize=10;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="960" y="220" width="310" height="120" as="geometry"/>
+                <mxCell id="int-gw" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;fontSize=10;strokeWidth=2;" value="core-gateway-internal&lt;br&gt;envoy-gateway-system.svc.cluster.local&lt;br&gt;TLS (self-signed-ca) — internal plane&lt;br&gt;Auth: CONVERSE_OPENAI_API_KEY (apiKey)&lt;br&gt;X-LibreChat-User → per-user x-account-id&lt;br&gt;models fetched from /v1/models&lt;br&gt;(image generation removed — ADR-0138)" vertex="1">
+                    <mxGeometry height="120" width="310" x="960" y="220" as="geometry"/>
                 </mxCell>
-                <mxCell id="redis-rt" value="&lt;b&gt;Redis-HA HAProxy&lt;/b&gt;&lt;br&gt;redis-ha-haproxy.redis-system:6379&lt;br&gt;Scheme: rediss:// (TLS only)&lt;br&gt;REDIS_CA: /etc/internal-ca/ca.crt&lt;br&gt;REDIS_PASSWORD: redis-ha-redis-auth&lt;br&gt;FORCED_IN_MEMORY: APP_CONFIG,CONFIG_STORE,STARTUP_CONFIG" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFCDD2;strokeColor=#C62828;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="960" y="380" width="310" height="110" as="geometry"/>
+                <mxCell id="redis-rt" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFCDD2;strokeColor=#C62828;fontSize=10;" value="&lt;b&gt;Redis-HA HAProxy&lt;/b&gt;&lt;br&gt;redis-ha-haproxy.redis-system:6379&lt;br&gt;Scheme: rediss:// (TLS only)&lt;br&gt;REDIS_CA: /etc/internal-ca/ca.crt&lt;br&gt;REDIS_PASSWORD: redis-ha-redis-auth&lt;br&gt;FORCED_IN_MEMORY: APP_CONFIG,CONFIG_STORE,STARTUP_CONFIG" vertex="1">
+                    <mxGeometry height="110" width="310" x="960" y="380" as="geometry"/>
                 </mxCell>
-                <mxCell id="meili-rt" value="&lt;b&gt;Meilisearch&lt;/b&gt;&lt;br&gt;http://librechat-search:7700&lt;br&gt;Plain HTTP, in-namespace&lt;br&gt;Auth: MEILI_MASTER_KEY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="430" width="230" height="80" as="geometry"/>
+                <mxCell id="meili-rt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=10;" value="Meilisearch v1.35.0&lt;br&gt;http://librechat-search:7700&lt;br&gt;Plain HTTP, in-namespace&lt;br&gt;Auth: MEILI_MASTER_KEY" vertex="1">
+                    <mxGeometry height="80" width="230" x="580" y="430" as="geometry"/>
                 </mxCell>
-                <mxCell id="mongo-rt" value="&lt;b&gt;MongoDB&lt;/b&gt;&lt;br&gt;librechat-app-db-0.librechat-app-db-headless:27017&lt;br&gt;No auth (auth.enabled: false)&lt;br&gt;30 Gi PVC, architecture: standalone&lt;br&gt;replicaSetName: rs0, members: 1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFE0B2;strokeColor=#E65100;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="560" width="280" height="100" as="geometry"/>
+                <mxCell id="mongo-rt" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFE0B2;strokeColor=#E65100;fontSize=10;" value="MongoDB 8.2.6&lt;br&gt;librechat-app-db-0.librechat-app-db-headless:27017&lt;br&gt;No auth (auth.enabled: false)&lt;br&gt;30 Gi PVC, architecture: standalone&lt;br&gt;replicaSetName: rs0, members: 1&lt;br&gt;nightly backup (converse-chat, 02:00)" vertex="1">
+                    <mxGeometry height="100" width="280" x="580" y="560" as="geometry"/>
                 </mxCell>
-                <mxCell id="s3-rt" value="&lt;b&gt;Hetzner Object Storage&lt;/b&gt;&lt;br&gt;nbg1.your-objectstorage.com&lt;br&gt;Bucket: ssegning-k8s-state&lt;br&gt;AWS_FORCE_PATH_STYLE: true&lt;br&gt;(images/ and files/ prefix keys)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E1BEE7;strokeColor=#6A1B9A;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="200" y="560" width="280" height="90" as="geometry"/>
+                <mxCell id="s3-rt" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#E1BEE7;strokeColor=#6A1B9A;fontSize=10;" value="&lt;b&gt;Hetzner Object Storage&lt;/b&gt;&lt;br&gt;nbg1.your-objectstorage.com&lt;br&gt;Bucket: ssegning-k8s-state&lt;br&gt;AWS_FORCE_PATH_STYLE: true&lt;br&gt;(images/ and files/ prefix keys)" vertex="1">
+                    <mxGeometry height="90" width="280" x="200" y="560" as="geometry"/>
                 </mxCell>
-                <mxCell id="backends" value="AI Model Backends&lt;br&gt;Fireworks · DeepInfra · Google · Self-hosted GPU&lt;br&gt;(routed by Envoy AI Gateway)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="1000" y="580" width="280" height="80" as="geometry"/>
+                <mxCell id="backends" parent="1" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=10;" value="AI Model Backends&lt;br&gt;Fireworks · DeepInfra · Google · Self-hosted GPU&lt;br&gt;(routed by Envoy AI Gateway)" vertex="1">
+                    <mxGeometry height="80" width="280" x="1000" y="580" as="geometry"/>
                 </mxCell>
-                <mxCell id="mcp-box" value="&lt;b&gt;MCP Servers (OAuth2 client credentials)&lt;/b&gt;&lt;br&gt;CD_MCP_CLIENT_ID/SECRET → librechat-mcp-cd-credentials (Lightbridge self-service)&lt;br&gt;GITHUB_MCP_CLIENT_ID/SECRET → librechat-mcp-github&lt;br&gt;CODERS_MCP_CLIENT_ID/SECRET → librechat-mcp-coder-credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3949AB;fontSize=9;" parent="1" vertex="1">
-                    <mxGeometry x="200" y="430" width="340" height="90" as="geometry"/>
+                <mxCell id="mcp-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3949AB;fontSize=9;" value="&lt;b&gt;MCP Servers (OAuth2 client credentials)&lt;/b&gt;&lt;br&gt;CD_MCP_CLIENT_ID/SECRET → librechat-mcp-cd-credentials (Lightbridge self-service)&lt;br&gt;GITHUB_MCP_CLIENT_ID/SECRET → librechat-mcp-github&lt;br&gt;CODERS_MCP_CLIENT_ID/SECRET → librechat-mcp-coder-credentials" vertex="1">
+                    <mxGeometry height="90" width="340" x="200" y="430" as="geometry"/>
                 </mxCell>
-                <mxCell id="websearch" value="Web Search / Scraper / Reranker&lt;br&gt;SERPER_API_KEY · FIRECRAWL_API_KEY · JINA_API_KEY&lt;br&gt;(from librechat-websearch-config)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" parent="1" vertex="1">
-                    <mxGeometry x="200" y="700" width="290" height="60" as="geometry"/>
+                <mxCell id="websearch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" value="Web Search / Scraper / Reranker&lt;br&gt;SERPER_API_KEY · FIRECRAWL_API_KEY · JINA_API_KEY&lt;br&gt;(from librechat-websearch-config)" vertex="1">
+                    <mxGeometry height="60" width="290" x="200" y="700" as="geometry"/>
                 </mxCell>
-                <mxCell id="code-api" value="LibreChat Code Interpreter&lt;br&gt;Managed sandbox API (librechat.ai)&lt;br&gt;LIBRECHAT_CODE_API_KEY → librechat-code-config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="700" width="280" height="60" as="geometry"/>
+                <mxCell id="code-api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" value="Code Interpreter — SELF-HOSTED (ADR-0122)&lt;br&gt;codeapi-api.librechat-sandbox:3112&lt;br&gt;Ed25519 JWT per request&lt;br&gt;(librechat-codeapi-jwt; LIBRECHAT_CODE_API_KEY dormant)" vertex="1">
+                    <mxGeometry height="60" width="280" x="580" y="700" as="geometry"/>
                 </mxCell>
-                <mxCell id="skills-sync" value="GitHub Skills Sync&lt;br&gt;GITHUB_SKILLS_TOKEN → librechat-skills-sync&lt;br&gt;Fine-grained PAT: ADORSYS-GIS/ai-helm (read contents)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" parent="1" vertex="1">
-                    <mxGeometry x="960" y="700" width="280" height="60" as="geometry"/>
+                <mxCell id="skills-sync" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=9;" value="GitHub Skills Sync (hourly)&lt;br&gt;GITHUB_SKILLS_TOKEN → librechat-skills-sync&lt;br&gt;source ADORSYS-GIS/ai-helm skills/&lt;br&gt;⚠ failing 2026-10-05: invalid YAML in governance/SKILL.md" vertex="1">
+                    <mxGeometry height="60" width="280" x="960" y="700" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-browser-traefik" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00695C;strokeWidth=2;" parent="1" source="browser" target="traefik" edge="1">
+                <mxCell id="e-browser-traefik" edge="1" parent="1" source="browser" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00695C;strokeWidth=2;" target="traefik">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-traefik-lc" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00695C;strokeWidth=2;" parent="1" source="traefik" target="lc-centre" edge="1">
+                <mxCell id="e-traefik-lc" edge="1" parent="1" source="traefik" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00695C;strokeWidth=2;" target="lc-centre">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-opencode-nginx" value="fetches JSON" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#558B2F;dashed=1;" parent="1" source="opencode-cli" target="nginx-rt" edge="1">
+                <mxCell id="e-opencode-nginx" edge="1" parent="1" source="opencode-cli" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#558B2F;dashed=1;" target="nginx-rt" value="fetches JSON">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-kc" value="OIDC SSO" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#BF360C;" parent="1" source="lc-centre" target="keycloak" edge="1">
+                <mxCell id="e-lc-kc" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#BF360C;" target="keycloak" value="OIDC SSO">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-gw" value="CONVERSE_OPENAI_API_KEY (TLS)" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#2E7D32;strokeWidth=2;" parent="1" source="lc-centre" target="int-gw" edge="1">
+                <mxCell id="e-lc-gw" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#2E7D32;strokeWidth=2;" target="int-gw" value="Bearer key + X-LibreChat-User (TLS)">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-redis" value="rediss:// (TLS + HAProxy)" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#C62828;" parent="1" source="lc-centre" target="redis-rt" edge="1">
+                <mxCell id="e-lc-redis" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#C62828;" target="redis-rt" value="rediss:// (TLS + HAProxy)">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-meili" value="MEILI_MASTER_KEY" style="edgeStyle=orthogonalEdgeStyle;curved=1;" parent="1" source="lc-centre" target="meili-rt" edge="1">
+                <mxCell id="e-lc-meili" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;" target="meili-rt" value="MEILI_MASTER_KEY">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-mongo" value="MONGO_URI (headless pod-0)" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#E65100;" parent="1" source="lc-centre" target="mongo-rt" edge="1">
+                <mxCell id="e-lc-mongo" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#E65100;" target="mongo-rt" value="MONGO_URI (headless pod-0)">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-s3" value="AWS_* (path-style S3)" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#6A1B9A;" parent="1" source="lc-centre" target="s3-rt" edge="1">
+                <mxCell id="e-lc-s3" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#6A1B9A;" target="s3-rt" value="AWS_* (path-style S3)">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-mcp" value="OAuth2 client creds" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#3949AB;" parent="1" source="lc-centre" target="mcp-box" edge="1">
+                <mxCell id="e-lc-mcp" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#3949AB;" target="mcp-box" value="OAuth2 client creds">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-gw-backends" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#E65100;strokeWidth=2;" parent="1" source="int-gw" target="backends" edge="1">
+                <mxCell id="e-gw-backends" edge="1" parent="1" source="int-gw" style="edgeStyle=orthogonalEdgeStyle;curved=1;strokeColor=#E65100;strokeWidth=2;" target="backends">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-websearch" style="edgeStyle=orthogonalEdgeStyle;curved=1;" parent="1" source="lc-centre" target="websearch" edge="1">
+                <mxCell id="e-lc-websearch" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;" target="websearch">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-code" style="edgeStyle=orthogonalEdgeStyle;curved=1;" parent="1" source="lc-centre" target="code-api" edge="1">
+                <mxCell id="e-lc-code" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;" target="code-api">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e-lc-skills" style="edgeStyle=orthogonalEdgeStyle;curved=1;" parent="1" source="lc-centre" target="skills-sync" edge="1">
+                <mxCell id="e-lc-skills" edge="1" parent="1" source="lc-centre" style="edgeStyle=orthogonalEdgeStyle;curved=1;" target="skills-sync">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>

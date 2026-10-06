@@ -1,7 +1,13 @@
 # LibreChat — Complete Operational Guide
 
-> **Scope**: Exactly what exists in this repository and what runs in production today. No roadmap items,
-> no cross-topic intersections. Every detail is sourced directly from the chart files listed at each section.
+> **Scope**: Exactly what exists in `ai-helm` / `ai-helm-values` and what runs in production. No roadmap items.
+> Every detail is sourced from the chart files listed at each section.
+>
+> **Re-verified 2026-10-05** against `ai-helm@main` (`9bc0c3ff`), `ai-helm-values@main` (`7e91a64`) and the live
+> `home-remote` cluster. Main changes since the first version: `librechart` has **2** children (the opencode
+> well-known moved to `ai-models`, §6/§14), a self-hosted **Code Interpreter** exists (§18), image generation was
+> removed (§5.3), the gateway attributes LibreChat traffic **per user** (§17), and the seed job prunes (§13).
+> Concepts, labs and quiz: [`librechat-deep-dive.md`](librechat-deep-dive.md).
 
 ---
 
@@ -12,7 +18,7 @@
 3. [Orchestrator: `charts/librechart/`](#3-orchestrator-chartslibrechart)
 4. [Leaf 1: `charts/librechat-search/` — Meilisearch](#4-leaf-1-chartslibrechat-search--meilisearch)
 5. [Leaf 2: `charts/librechat-app/` — LibreChat + MongoDB](#5-leaf-2-chartslibrechat-app--librechat--mongodb)
-6. [Leaf 3: `charts/librechat-opencode-wellknown/` — nginx + opencode JSON](#6-leaf-3-chartslibrechat-opencode-wellknown--nginx--opencode-json)
+6. [Neighbour: `charts/librechat-opencode-wellknown/` — no longer a librechart leaf](#6-neighbour-chartslibrechat-opencode-wellknown--no-longer-a-librechart-leaf)
 7. [Secrets — Every Secret, Where It Lives, What It Contains](#7-secrets--every-secret-where-it-lives-what-it-contains)
 8. [Networking — Every Service, Ingress, and Port](#8-networking--every-service-ingress-and-port)
 9. [Pod Configuration — Resources, Security, Health Checks](#9-pod-configuration--resources-security-health-checks)
@@ -23,12 +29,17 @@
 14. [opencode Well-Known — The JSON Document and How It Is Served](#14-opencode-well-known--the-json-document-and-how-it-is-served)
 15. [Vanity Domain Redirect](#15-vanity-domain-redirect)
 16. [ArgoCD Sync Behaviour](#16-argocd-sync-behaviour)
+17. [Gateway Integration — Identity, Plans, Rate Limits](#17-gateway-integration--identity-plans-rate-limits)
+18. [Self-Hosted Code Interpreter](#18-self-hosted-code-interpreter)
+19. [MongoDB Backup](#19-mongodb-backup)
+20. [Live State Snapshot (2026-10-05)](#20-live-state-snapshot-2026-10-05)
 
 ---
 
 ## 1. What LibreChat Is in This Repo
 
-LibreChat (`ghcr.io/danny-avila/librechat`, version `v0.8.7` — set in `global.librechat.version`) is an
+LibreChat (`ghcr.io/danny-avila/librechat`, version `v0.8.7` — set in `global.librechat.version`; upstream's
+latest is `v0.8.8`, 2026-10-01, repo now `LibreChat-AI/LibreChat`) is an
 open-source self-hosted AI chat application. In this platform it is:
 
 - The primary end-user web interface for AI interactions, reachable at `https://ai.camer.digital`
@@ -47,7 +58,7 @@ open-source self-hosted AI chat application. In this platform it is:
 charts/
 ├── librechart/                      ← ORCHESTRATOR
 │   ├── Chart.yaml
-│   ├── values.yaml                  ← ArgoCD wiring + the 3-child list
+│   ├── values.yaml                  ← ArgoCD wiring + the 2-child list
 │   └── templates/
 │       ├── applicationset.yaml      ← The single ApplicationSet CR
 │       └── _helpers.tpl             ← ADR-0017 destination guard (hard-fail)
@@ -58,7 +69,7 @@ charts/
 │
 ├── librechat-app/                   ← LEAF 2 (sync-wave 0)
 │   ├── Chart.yaml                   ← depends on bjw-template 4.6.2 + mongodb 1.7.6
-│   ├── values.yaml                  ← 742 lines: every env var, every secret ref
+│   ├── values.yaml                  ← 814 lines: every env var, every secret ref
 │   ├── files/
 │   │   └── seed-agents.js           ← The agent seed script (Node.js)
 │   └── templates/
@@ -71,18 +82,26 @@ charts/
 │       ├── externalsecret-s3.yaml   ← S3 credentials ExternalSecret
 │       └── pdb.yaml                 ← PodDisruptionBudget for MongoDB
 │
-└── librechat-opencode-wellknown/    ← LEAF 3 (sync-wave 1)
-    ├── Chart.yaml
-    ├── values.yaml                  ← 2125 lines: the entire well-known JSON + nginx config
-    └── templates/
-        └── configmap.yaml           ← Wraps the JSON into a ConfigMap for nginx
+│
+│   ── NOT librechart children, but part of the LibreChat picture ──
+├── librechat-code-interpreter/      ← flat app in charts/apps, ns librechat-sandbox (ADR-0122, §18)
+│   ├── values.yaml                  ← 926 lines: 7-component codeapi stack on bjw-template
+│   └── templates/externalsecret.yaml
+├── librechat-opencode-wellknown/    ← child of the ai-models orchestrator since ADR-0125 (§14)
+│   ├── values.yaml                  ← 2245 lines: the well-known JSON + nginx config
+│   └── templates/configmap.yaml     ← nginx default.conf + the JSON content
+└── mongodb-backup/                  ← flat app in charts/apps, ns converse-chat (§19)
 ```
+
+The deployed values for `librechat-app` (the `librechat.yaml` `config:`, the `generation` bump and the agent fleet)
+live in **`ai-helm-values`** `environments/prod/values/librechat-app.yaml` (954 lines). There is no values file for
+`librechat-search` there — it runs on chart defaults.
 
 ---
 
 ## 3. Orchestrator: `charts/librechart/`
 
-**Source file**: [`charts/librechart/values.yaml`](file:///Users/gisstudent/ai-helm/charts/librechart/values.yaml)
+**Source file**: [`charts/librechart/values.yaml`](../../charts/librechart/values.yaml)
 
 ### What the orchestrator does
 
@@ -108,7 +127,7 @@ cluster (the ArgoCD control plane), **not** on `home-remote` where the workloads
 | `argocd.syncPolicy.automated.selfHeal` | `true` |
 | `argocd.syncPolicy.syncOptions` | `CreateNamespace=true`, `ServerSideApply=true` |
 
-### The three children (exact list)
+### The two children (exact list)
 
 ```yaml
 children:
@@ -122,14 +141,17 @@ children:
     syncWave: "0"
     enabled: true
 
-  - name: librechat-opencode-wellknown
-    chartName: librechat-opencode-wellknown
-    syncWave: "1"
-    enabled: true
+  # ⚠️ librechat-opencode-wellknown MOVED to the `ai-models` orchestrator (ADR-0125).
+  # Its provider.camer-digital.models block is derived from the model catalog, and
+  # only that orchestrator can pass `.Values.models` to a child. Do NOT re-add it here.
 ```
 
-Each element becomes one ArgoCD `Application`. The ApplicationSet list generator iterates these three
-elements and produces one Application per element. The `chartName` is the OCI artifact name — the
+Each element becomes one ArgoCD `Application`. The ApplicationSet list generator iterates these two
+elements and produces one Application per element.
+
+The orchestrator itself is deployed by the `librechat` entry in `charts/apps/values.yaml` with
+`controlPlane: true` (so the ApplicationSet lands in `argocd` on the ArgoCD cluster) and `chart: librechart`
+(floating from OCI). The `chartName` is the OCI artifact name — the
 ApplicationSet builds the source URL as `oci://ghcr.io/adorsys-gis/charts/<chartName>`.
 
 Every child Application also has a **second source** that points at `ai-helm-values`
@@ -168,7 +190,7 @@ Meilisearch reads it via its own env config (the meilisearch chart mounts it or 
 
 **Sync-wave**: `0`.
 
-**Source file**: [`charts/librechat-app/values.yaml`](file:///Users/gisstudent/ai-helm/charts/librechat-app/values.yaml)
+**Source file**: [`charts/librechat-app/values.yaml`](../../charts/librechat-app/values.yaml)
 
 ### 5.1 Chart dependencies
 
@@ -262,96 +284,40 @@ Every environment variable set on the `librechat` container:
 | `SERPER_API_KEY` | from Secret `librechat-websearch-config`, key `serper_api_key` |
 | `FIRECRAWL_API_KEY` | from Secret `librechat-websearch-config`, key `firecrawl_api_key` |
 | `JINA_API_KEY` | from Secret `librechat-websearch-config`, key `jina_api_key` |
-| `IMAGE_GEN_OAI_API_KEY` | from Secret `librechat-main-config`, key `converse_openai_api_key` |
-| `IMAGE_GEN_OAI_BASEURL` | `https://core-gateway-internal.envoy-gateway-system.svc.cluster.local/v1` |
-| `IMAGE_GEN_OAI_MODEL` | `gemini-2.5-flash-image` |
+| `LIBRECHAT_CODE_BASEURL` | `http://codeapi-api.librechat-sandbox.svc.cluster.local:3112/v1` (self-hosted, §18) |
+| `CODEAPI_JWT_ENABLED` | `"true"` — mint a short-lived JWT per Code Interpreter request |
+| `CODEAPI_JWT_ALGORITHM` | `EdDSA` |
+| `CODEAPI_JWT_KID` | `lc-codeapi-2026-05` |
+| `CODEAPI_JWT_PRIVATE_KEY_BASE64` | from Secret `librechat-codeapi-jwt`, key `private_key_base64` |
 | `AWS_REGION` | from Secret `librechat-s3-config`, key `s3_region_name` |
 | `AWS_ACCESS_KEY_ID` | from Secret `librechat-s3-config`, key `s3_access_key_id` |
 | `AWS_SECRET_ACCESS_KEY` | from Secret `librechat-s3-config`, key `s3_secret_access_key` |
 | `AWS_BUCKET_NAME` | from Secret `librechat-s3-config`, key `s3_bucket_name` |
 | `AWS_ENDPOINT_URL` | `https://nbg1.your-objectstorage.com` |
 | `AWS_FORCE_PATH_STYLE` | `"true"` |
+| `S3_URL_EXPIRY_SECONDS` | `"604800"` (7 days; LibreChat's default 2 min broke images shortly after upload — `docs/integrations/librechat-s3-presigned-url-expiry.md`) |
+
+**Not set (on purpose)**:
+- `OPENID_REQUIRED_ROLE` is **commented out** ("open beta; everyone can connect and test"). Without it the
+  `OPENID_REQUIRED_ROLE_TOKEN_KIND` / `_PARAMETER_PATH` settings are inert — **no role gate** on login.
+- `IMAGE_GEN_OAI_*` were **removed 2026-09-15** (ADR-0138, no image tier after `hetzner-k8s-gpu-2` was removed).
+  Never set the API key without the base URL: the tool falls back to `https://api.openai.com/v1/` and would send our
+  internal gateway key to OpenAI. The values repo also lists all five image tools in `filteredTools`.
+- `LIBRECHAT_CODE_API_KEY` is still wired but **dormant** (managed librechat.ai sandbox; OSS LibreChat doesn't read it).
 
 **RAG API** (`rag-api` controller): disabled (`enabled: false`). The controller block exists in
 `values.yaml` lines 558-616 but renders nothing because `bjw-template` skips disabled controllers.
 
 ---
 
-## 6. Leaf 3: `charts/librechat-opencode-wellknown/` — nginx + opencode JSON
+## 6. Neighbour: `charts/librechat-opencode-wellknown/` — no longer a librechart leaf
 
-**Sync-wave**: `1`.
-
-This leaf deploys a **static nginx pod** that serves one JSON document at the path
-`/opencode/.well-known/opencode` (or equivalently just the `/` since nginx is configured with a
-single root). The URL that external clients hit is `https://ai.camer.digital/opencode/.well-known/opencode`.
-When a developer runs `opencode auth login https://ai.camer.digital/opencode`, the opencode CLI
-fetches this URL and bootstraps the user's full development environment.
-
-**Key sizes**: `values.yaml` is 2125 lines / 110KB. The entire content is the JSON payload expressed
-as YAML, plus the nginx configuration. There are no own Kubernetes Deployment fields beyond what
-`bjw-template` provides — everything is in `values.yaml`.
-
-### What the JSON document contains (the `wellKnown:` key)
-
-```yaml
-wellKnown:
-  auth:
-    command: ["sh", "-c", "echo plugin-managed"]   # stub — plugin overrides auth
-    env: OPENAI_API_KEY
-
-  config:
-    $schema: https://opencode.ai/config.json
-    default_agent: assistant
-    plugin:
-      - "@vymalo/opencode-oauth2@0.12.0"
-      - "@vymalo/opencode-models-info@0.12.0"
-      - "@vymalo/opencode-ratelimit@0.12.0"
-      - ["@vymalo/opencode-browser@0.12.0", {port: 4517, groups: [page, control, debug, interactive]}]
-      - "opencode-skills-collection@4.0.14"
-    provider:
-      camer-digital:
-        name: "Camer Digital"
-        options:
-          baseURL: "https://api.ai.camer.digital/v1"
-          headerTimeout: 90000   # ms — covers the max 65s burst-wait
-          chunkTimeout: 90000
-          oauth2:
-            issuer: "https://auth.verif.fyi/realms/camer-digital"
-            clientId: "opencode-cli"
-            scopes: [openid, profile, offline_access]
-            authFlow: device_code
-            syncIntervalMinutes: 60
-            responseApi: false   # disabled 2026-06-13; uses Chat Completions path
-          meta:
-            modelsInfoUrl: "models/info"
-            modelsInfoHideUnmatched: true
-            modelsInfoOverwrite: [name]
-            rateLimit:
-              enabled: true
-              scope: model
-              headerPrefix: "x-ratelimit"
-              tiers:
-                - maxResetSeconds: 120
-                  action: wait
-                  maxWaitMs: 65000
-                  maxRetries: 3
-                - maxResetSeconds: null
-                  action: error
-```
-
-**Models with `reasoningEffort: low` default** (plus a `thinking` variant at `high`):
-`qwen3-4b-local`, `qwen3-5-4b-local`, `qwen3-8b-local`, `deepseek-v4-flash-0731`, `reviewer`,
-`adorsys-planner`, `adorsys-planner-pro`, `kimi-k2.5`, `minimax-m2p5`, `glm-5p2`,
-`qwen3p7-plus`, `gemini-3p1-flash-lite`, `glm-4.7-flash`, `minimax-m2.7`, `mimo-v2p5`,
-`ornith-1p0-35b`, `adorsys-researcher`, `adorsys-coder`, `adorsys-coder-pro`, `adorsys-reviewer`,
-`adorsys-reviewer-pro`, `adorsys-frontend`, `mimo-v2p5-pro`, `minimax-m3`.
-
-**MCP servers**: All configured with `enabled: false` (opt-in). Remote servers:
-`brave`, `context7`, `refero`, `firecrawl`, `terraform` — all route through `api.ai.camer.digital/mcp/<name>`
-with the `opencode-cli` OAuth client. Local servers (launched via npx by the opencode CLI, not through
-the gateway): `memory`, and others.
-
----
+> ⚠️ **Moved (ADR-0125).** This chart used to be "Leaf 3" of `librechart`. It is now a child of the
+> **`ai-models`** orchestrator (`charts/ai-models/templates/applicationset.yaml`), deployed as Application /
+> Deployment **`models-opencode-wellknown`** (sync-wave 1) in the same `converse` namespace. Reason: its
+> `provider.camer-digital.models` block (per-model reasoning-effort tuning) is *derived from the model catalog*, and
+> only the `ai-models` orchestrator can hand a child `.Values.models` — from `librechart` the derivation silently
+> produced an empty map. Full details in §14. It shares LibreChat's host, but it is **not part of LibreChat**.
 
 ## 7. Secrets — Every Secret, Where It Lives, What It Contains
 
@@ -384,7 +350,8 @@ Source path: `ai/camer/digital/prod/env` for all of these.
 | | `firecrawl_api_key` | `librechat_websearch_config_firecrawl_api_key` |
 | | `jina_api_key` | `librechat_websearch_config_jina_api_key` |
 | `librechat-skills-sync` | `github_token` | `librechat_skills_sync_github_token` |
-| `librechat-code-config` | `code_api_key` | `librechat_code_api_key` |
+| `librechat-code-config` | `code_api_key` | `librechat_code_api_key` (dormant — managed sandbox only) |
+| `librechat-codeapi-jwt` | `private_key_base64` | `librechat_codeapi_jwt_private_key_base64` (Ed25519 private key; the public half is consumed by `librechat-code-interpreter`, §18) |
 
 ### 7.2 Secret created by `externalsecret-redis.yaml`
 
@@ -439,7 +406,10 @@ point at `ca.crt` in that mount: `NODE_EXTRA_CA_CERTS` and `REDIS_CA`.
 | `librechat-app` (from bjw-s) | ClusterIP | `3080` | LibreChat container port `3080` |
 | `librechat-app-db` (headless) | ClusterIP / None | `27017` | MongoDB pod port `27017` |
 | `librechat-search` | ClusterIP | `7700` | Meilisearch container port `7700` |
-| opencode wellknown service | ClusterIP | `80` | nginx container port `80` |
+| `librechat-app-db` (ClusterIP) | ClusterIP | `27017` | MongoDB pod (exists too, but LibreChat uses the headless name) |
+
+The opencode well-known Service (`models-opencode-wellknown:80 → 8080`) is in the same namespace but belongs to
+the `ai-models` orchestrator (§14).
 
 ### 8.2 Main Ingress — `ai.camer.digital`
 
@@ -466,9 +436,10 @@ rules:
   egress:  [{}]   # allow all egress
 ```
 
-This is a permissive policy — it satisfies the Cilium baseline that requires every workload to have
-a NetworkPolicy CR, without actually restricting traffic. The enforcement of network segmentation
-is handled by the Cilium CNI policy layer, not this specific policy.
+This is a fully **permissive** policy — it restricts nothing. Unlike `apps`/`data`/`observability`/`platform`,
+the `converse` namespace has **no default-deny baseline** (verified live 2026-10-05: the only policies in
+`converse` are this one and three unrelated app policies). Combined with MongoDB's `auth.enabled: false`, network
+reachability is the database's only protection — a known hardening gap.
 
 ### 8.4 HPA
 
@@ -557,7 +528,7 @@ ConfigMap changes — the pod must restart to pick up config changes.
 
 ## 10. MongoDB — Exact Configuration
 
-**Source**: `db:` block in [`charts/librechat-app/values.yaml`](file:///Users/gisstudent/ai-helm/charts/librechat-app/values.yaml#L698-L742)
+**Source**: `db:` block in [`charts/librechat-app/values.yaml`](../../charts/librechat-app/values.yaml#L698-L742)
 
 | Setting | Value |
 |---|---|
@@ -571,7 +542,7 @@ ConfigMap changes — the pod must restart to pick up config changes.
 
 ### MongoDB connection string (rendered by `_mongo_uri.tpl`)
 
-The template at [`charts/librechat-app/templates/_mongo_uri.tpl`](file:///Users/gisstudent/ai-helm/charts/librechat-app/templates/_mongo_uri.tpl) builds the URI as:
+The template at [`charts/librechat-app/templates/_mongo_uri.tpl`](../../charts/librechat-app/templates/_mongo_uri.tpl) builds the URI as:
 
 ```
 mongodb://<Release.Name>-db-0.<Release.Name>-db-headless:27017
@@ -626,7 +597,7 @@ extraVolumeMounts:
 
 ### PodDisruptionBudget for MongoDB
 
-From [`charts/librechat-app/templates/pdb.yaml`](file:///Users/gisstudent/ai-helm/charts/librechat-app/templates/pdb.yaml):
+From [`charts/librechat-app/templates/pdb.yaml`](../../charts/librechat-app/templates/pdb.yaml):
 
 ```yaml
 apiVersion: policy/v1
@@ -685,7 +656,7 @@ a Redis instance.
    `environments/prod/values/librechat-app.yaml`. This merges the `config:` key into the chart's
    values at render time.
 
-3. **Render**: [`templates/configmap.yaml`](file:///Users/gisstudent/ai-helm/charts/librechat-app/templates/configmap.yaml)
+3. **Render**: [`templates/configmap.yaml`](../../charts/librechat-app/templates/configmap.yaml)
    checks `{{ with .Values.config }}` — if the key is non-empty, it renders:
 
    ```yaml
@@ -728,7 +699,7 @@ a Redis instance.
        includeChecksumInControllers:
          - librechat                 # → bjw-s stamps checksum/configMaps annotation
        data:
-         generation: "1"             # bump this in the same commit as any config change
+         generation: "1"             # chart default; ai-helm-values overrides it — live value "14"
    ```
 
    When `data.generation` changes, bjw-s recomputes the annotation on the Deployment pod template,
@@ -740,8 +711,8 @@ a Redis instance.
 
 ## 13. The Agent Seed Job — Exact Mechanics
 
-**Source**: [`charts/librechat-app/templates/agent-seed-job.yaml`](file:///Users/gisstudent/ai-helm/charts/librechat-app/templates/agent-seed-job.yaml) +
-[`charts/librechat-app/files/seed-agents.js`](file:///Users/gisstudent/ai-helm/charts/librechat-app/files/seed-agents.js)
+**Source**: [`charts/librechat-app/templates/agent-seed-job.yaml`](../../charts/librechat-app/templates/agent-seed-job.yaml) +
+[`charts/librechat-app/files/seed-agents.js`](../../charts/librechat-app/files/seed-agents.js)
 
 Guarded by `agentSeed.enabled` (default `false`; actual fleet enabled in `ai-helm-values`).
 
@@ -782,10 +753,30 @@ Environment variables the Job passes to the container:
 | `PLATFORM_USER_EMAIL` | `agentSeed.platformUserEmail` (required, e.g. `platform@ai.camer.digital`) |
 | `FLEET_PATH` | `/fleet/fleet.json` |
 
-The script is two-phase:
-1. It connects to MongoDB directly to find the platform user by email and generate a JWT for that user.
-2. It uses LibreChat's own REST API (`LIBRECHAT_URL`) to GET each agent by name and then PATCH
-   (update) or POST (create) it. This is idempotent — running twice produces the same result.
+What the script does (`files/seed-agents.js`, in order):
+1. **Find the author**: connect to MongoDB (`MONGO_URI` has no db name ⇒ LibreChat's default db `test`), find the
+   user with `PLATFORM_USER_EMAIL`. Missing ⇒ **exit 1** ("log into LibreChat once via SSO first") — fails closed
+   rather than authoring under the wrong user.
+2. **Mint a token**: `jwt.sign({id: user._id}, JWT_SECRET, {expiresIn: '30m'})` — the payload LibreChat's
+   `requireJwtAuth` expects. Every request sends a **browser User-Agent**, because LibreChat's uaParser middleware
+   rejects non-browser clients ("Illegal request").
+3. **Index existing agents**: `GET /api/agents?limit=200` → map name → `agent_…` id.
+4. **Resolve skills**: read the `skills` collection, map names → ObjectIds (a skill not synced yet only *warns*).
+5. **Upsert, two phases**: Phase A = agents without `subagentNames` (leaves), Phase B = orchestrators, whose
+   `subagentNames` must resolve to ids (else exit 1). Per agent: `mcpServers: [x]` → tool `sys__all__sys_mcp_x`,
+   `tools` copied, `skills` → ids + `skills_enabled`, `subagents: {enabled, agent_ids}`; then **PATCH**
+   `/api/agents/<id>` if the name exists, else **POST** `/api/agents`.
+6. **Make it public**: look up the agent's Mongo `_id` (the ACL API rejects the public `agent_…` id) and
+   `PUT /api/permissions/agent/<_id>` with `{updated: [], removed: [], public: true, publicAccessRoleId: "agent_viewer"}`.
+7. **Prune**: delete every agent whose `author` is the platform user and whose name is no longer in the fleet.
+   Scoped to that author, so user-built agents are never touched. Consequence: **a rename creates a new agent and
+   deletes the old one** (new `agent_id` — any modelSpec pointing at the old id breaks). Live proof (ADR-0138
+   erratum): `[agent-seed] pruned image-creator (agent_Oo2rOizVp7loelF7HMz9i)`.
+
+The live fleet (ai-helm-values `agentSeed.agents`): **Security Reviewer**, **Test Coverage Reviewer**,
+**Deep Reviewer** (subagents: the previous two; surfaced in the picker by the `deep-reviewer` modelSpec via
+`agent_id: agent_OTvNLyzJLQt85SZd1xgTe`), and **coder** (`adorsys-coder-pro-internal`, `coder_mcp` + `execute_code`).
+The `image-creator` agent is commented out since 2026-09-15.
 
 Volumes:
 - `seed-script` → `/seed` (mounts the `agent-seed-script` ConfigMap)
@@ -805,41 +796,50 @@ fleet definition changes.
 
 ## 14. opencode Well-Known — The JSON Document and How It Is Served
 
-The nginx pod at Leaf 3 serves the well-known document. Here is the exact mechanism:
+**Owner**: `ai-models` orchestrator (ADR-0125), Application/Deployment `models-opencode-wellknown`, chart
+`librechat-opencode-wellknown` (2245-line `values.yaml`), sync-wave 1, ns `converse`. URL:
+`https://ai.camer.digital/opencode/.well-known/opencode`. `opencode auth login https://ai.camer.digital/opencode`
+fetches it and bootstraps the developer's opencode.
 
-1. `values.yaml` contains the `wellKnown:` key — a YAML object representing the full JSON payload.
-2. `templates/configmap.yaml` renders this into a ConfigMap where `data.content` is the JSON string
-   (serialized via Helm's `toJson` or `toYaml` pipeline).
-3. nginx is configured (via its own config in the chart) to serve the content of this ConfigMap key
-   at the well-known path.
-4. The nginx pod runs with 2 replicas for availability.
+### How it is served
+1. `values.yaml` `wellKnown:` = the payload as YAML (`auth` + `config`); the orchestrator passes only the
+   catalog-derived `models` map in.
+2. `templates/configmap.yaml` renders **two** ConfigMaps: `<release>-nginx-config` (`default.conf`: listen 8080,
+   `root /usr/share/nginx/html`, `default_type application/json`, `location = /opencode/.well-known/opencode` with
+   `Cache-Control: no-store`, `/healthz`, everything else 404) and `<release>-content` (key `opencode` = the JSON).
+3. bjw-template Deployment: `nginxinc/nginx-unprivileged:1.27-alpine`, **2 replicas**, read-only rootfs,
+   emptyDirs for `/tmp`, `/var/cache/nginx`, `/var/run`; content mounted as a **directory** (no `subPath`) at
+   `/usr/share/nginx/html/opencode/.well-known` — so a content change is served without a pod restart.
+4. Service `:80 → 8080`; Ingress host `ai.camer.digital`, path `/opencode/.well-known/opencode` (**Exact**),
+   TLS secret `ai.camer.digital-tls` (shared with LibreChat's ingress).
 
-### OAuth2 plugin wiring (the key to how auth works in opencode)
+### Authentication (ADR-0135 — no longer Keycloak)
+Plugin **`@vymalo/opencode-lightbridge@0.17.0`** replaced `@vymalo/opencode-oauth2` + `@vymalo/opencode-otel`:
+- `auth`: `id: camer-digital` (provider id **and** token-cache identity — renaming it logs everyone out),
+  `issuer: https://auth.ai.camer.digital` (**authz-idp**), `clientId: opencode-cli` (public client, PKCE),
+  scopes `openid profile email offline_access`, `authFlow: device_code` (no local callback port → works over
+  SSH/containers/CI).
+- `register`: `baseURL https://api.ai.camer.digital/v1`, `syncIntervalMinutes: 60`, `responseApi: false`.
+- `gateway.exchange: false` — authz-idp's device-code token is already project-scoped (`project_id`, `account_id`,
+  `budget_tier`, `quota_tier`, `model_policy`, `allowed_models`) and its `iss` is what the gateway's
+  `lightbridge-apikey` identity trusts; nothing to exchange.
+- The `auth.command` stub (`echo plugin-managed`) only satisfies opencode's schema.
 
-The `@vymalo/opencode-oauth2@0.12.0` plugin manages authentication completely:
+Other plugins: `@vymalo/opencode-models-info@0.17.0`, `@vymalo/opencode-ratelimit@0.17.0`,
+`@vymalo/opencode-browser@0.17.0`, `opencode-skills-collection@4.0.14`.
 
-- The `auth.command` stub in the JSON (`["sh", "-c", "echo plugin-managed"]`) satisfies opencode's
-  schema check but is never actually executed — the plugin's `chat.headers` hook overrides the
-  `Authorization` header on every request before it is sent.
-- The plugin uses the **device_code** OAuth2 flow against Keycloak (`authFlow: device_code`). This
-  is deliberate: `authorization_code` flow requires binding a local callback port, which fails in
-  headless or remote development environments. Device code requires only browser access.
-- The Keycloak client is `opencode-cli`. Scopes: `openid profile offline_access`.
-- Token synchronization interval: 60 minutes (`syncIntervalMinutes: 60`).
-- The plugin caches the access token and refreshes it via the `offline_access`/refresh token.
+### Rate-limit awareness (`@vymalo/opencode-ratelimit`)
+`scope: model`, `headerPrefix: x-ratelimit`, tiers: reset ≤ 120 s → **wait** (max 65 s, 3 retries); longer/unknown →
+**error** immediately. Timeouts `headerTimeout`/`chunkTimeout` 90 s cover the wait.
 
-### Rate limit awareness (`@vymalo/opencode-ratelimit@0.12.0`)
-
-When a request gets a 429 response, the plugin reads the `x-ratelimit-reset` header from the
-Envoy AI Gateway's response. The `tiers` configuration determines what to do:
-
-- If reset ≤ 120 seconds: it is a per-minute burst bucket reset. The plugin **waits** up to 65 seconds
-  (`maxWaitMs: 65000`) and retries up to 3 times (`maxRetries: 3`).
-- If reset > 120 seconds (or null): it is a monthly budget reset. The plugin **errors immediately**
-  (`action: error`) so the 429 surfaces to the user right away instead of freezing the session.
-
-`scope: model` keys rate-limit state per-model (keyed on `x-ai-eg-model`), matching the per-model
-`BackendTrafficPolicy` that the Envoy AI Gateway enforces.
+### Models, agents, MCP (live, 2026-10-05)
+- `provider.camer-digital.models`: 27 entries — per-model **tuning only** (low default `reasoningEffort` + a high
+  `thinking` variant); picker membership comes from the gateway (`/v1/models` ∩ `/v1/models/info`,
+  `modelsInfoHideUnmatched: true`).
+- 28 agents (`assistant` is `default_agent`; e.g. `architect`, `planner`, `reviewer`, `security`, `iac`, `devops`, …).
+- MCP: remote (through `api.ai.camer.digital/mcp/<name>`) `brave`, `context7`, `firecrawl`, `refero`, `terraform`;
+  local (npx) `confluence`, `drawio`, `git`, `jira`, `memory`, `mermaid` (**the only one enabled by default**),
+  `mobile`, `reddit`, `rss`, `sequentialthinking`, `shadcn`, `youtube`.
 
 ---
 
@@ -858,7 +858,7 @@ spec:
   redirectRegex:
     regex: "^https?://ai\\.kivoyo\\.com/(.*)"
     replacement: "https://ai.camer.digital/${1}"
-    permanent: false    # HTTP 302 (not 301) — temporary redirect
+    permanent: false    # temporary: 302 for GET, 307 for HEAD/other methods (verified with curl 2026-10-05)
 ```
 
 The `forceRename: kivoyo-redirect` override ensures the name is exactly `kivoyo-redirect` regardless
@@ -913,7 +913,6 @@ higher than the host-only redirect, so cert-manager can complete the challenge a
 |---|---|---|
 | `-1` | `librechat-search` | Meilisearch deploys first |
 | `0` | `librechat-app` | LibreChat + MongoDB deploy |
-| `1` | `librechat-opencode-wellknown` | nginx deploys last |
 
 ### Automated sync with prune and self-heal
 
@@ -926,8 +925,9 @@ automated:
 ### Server-side apply
 
 `syncOptions: [ServerSideApply=true]` — ArgoCD uses `kubectl apply --server-side` for all resources.
-This is required for large resources (e.g. the opencode well-known ConfigMap which is over 100KB)
-and for proper management of CRDs with complex merge strategies.
+It avoids the 256 KB `last-applied-configuration` annotation limit of client-side apply for large objects
+(historically the >100 KB opencode well-known ConfigMap, which now lives under `ai-models`) and gives proper
+field ownership.
 
 ### Namespace creation
 
@@ -939,3 +939,121 @@ exist. The namespace itself is not part of any chart.
 ArgoCD runs the `librechat-app-agent-seed` Job **after** the sync is complete and the Application
 is Healthy (all pods are ready). The Job uses `BeforeHookCreation` delete policy — the previous Job
 is always deleted first, ensuring exactly one Job exists per sync even when multiple syncs fire quickly.
+
+---
+
+## 17. Gateway Integration — Identity, Plans, Rate Limits
+
+**Sources**: ai-helm-values `environments/prod/values/librechat-app.yaml` (`endpoints.custom`),
+`security-policies.yaml` (internal AuthConfig), `models.yaml` (`requestRate`, `rateLimitBudgeting`),
+`core-gateway.yaml` (`budgetLimiter`); ADR-0021, ADR-0125.
+
+### 17.1 The custom endpoint
+
+```yaml
+endpoints:
+  custom:
+    - name: "converse"
+      apiKey: "${CONVERSE_OPENAI_API_KEY}"
+      baseURL: "https://core-gateway-internal.envoy-gateway-system.svc.cluster.local/v1"   # api-internal listener, internal-CA TLS
+      models:
+        default: ["qwen3-4b-local"]   # fallback only
+        fetch: true                   # GET /v1/models at startup (ADR-0125) — sees -internal models too
+      tokenConfig: { … }              # static context + $/1M prices, hand-copied from models.yaml
+      titleConvo: false
+      titleModel: "gemma-4"
+      modelDisplayLabel: "Converse AI"
+      headers:
+        X-LibreChat-User:  '{{LIBRECHAT_USER_OPENIDID}}'
+        X-LibreChat-Role:  '{{LIBRECHAT_USER_ROLE}}'
+        X-LibreChat-Email: '{{LIBRECHAT_USER_EMAIL}}'
+        X-LibreChat-Name:  '{{LIBRECHAT_USER_NAME}}'
+```
+
+(In the values file the placeholders are written as `'{{ `{{` }}LIBRECHAT_USER_OPENIDID{{ `}}` }}'` because the
+chart runs the config through `common.tplvalues.render` — Helm must emit the literal braces.)
+
+### 17.2 What Authorino does with it (internal AuthConfig, host `core-gateway-internal…`)
+
+- **Authentication**: either a Kubernetes SA token (TokenReview, audience `core-gateway-internal`) or a static
+  **apiKey** Secret labelled `kuadrant.io/apikey-for=internal-gateway` — LibreChat's is `internal-key-librechat`
+  (= `converse_openai_api_key`). ext_authz is attached to **both** listeners (`api-https`, `api-internal`).
+- **Descriptors** (CEL, overwriting anything the client sent):
+  - `x-account-id` / `x-org-id` = `x-librechat-user` if present, non-empty, and not containing `{{`; else other
+    fallbacks (Code-Intelligence repo, Coder workspace SA owner, SA username, apiKey Secret name).
+  - `x-billing-plan` = `pro` if `x-librechat-role == "pro"`, else `free` (forwarded user); `internal` for services.
+    LibreChat's role values are `USER`/`ADMIN`, so LibreChat users are effectively `free`.
+  - `x-oidc-email` / `x-oidc-name` from the forwarded headers (per-user dashboards).
+  - Project governance headers (`x-quota-tier`, `x-model-policy`, `x-api-key-id`, …) = constant `""`.
+  - Dynamic metadata `budget: {enforced: false, known: false, …}` — the budget-limiter Lua filter skips this plane
+    (absent metadata would make it 503).
+- **Why the `{{` guard**: 2026-08-01 a paid request arrived with `account_id` literally `{{LIBRECHAT_USER_OPENIDID}}`.
+
+### 17.3 Rate limits that actually apply to a LibreChat user (2026-10-05)
+
+| Mechanism | State | Applies to LibreChat? |
+|---|---|---|
+| Per-minute burst buckets (`rateLimitBudgeting.plans.*.burst`) | removed 2026-08-01 | no |
+| Monthly µ$ cost buckets (`monthlyBudgetUsd`) | deleted 2026-09-05 | no |
+| Budget limiter (Lightbridge ledger, 402 `budget_exhausted`) | `enabled: true`, `shadowMode: false` | **no** — internal plane publishes `enforced: false` |
+| Per-model RPM (`rpmPerKey`, default `60`) | active, one BackendTrafficPolicy per model, rules `x-api-key-id × model` and `x-account-id × model` | **yes** via the second rule → N requests/min **per user per model** (the first rule's descriptor is empty) |
+| LibreChat `balance` | `enabled: false` | — |
+
+---
+
+## 18. Self-Hosted Code Interpreter
+
+**Sources**: `charts/librechat-code-interpreter/`, `charts/apps/values.yaml` (`librechat-code-interpreter` entry +
+`global.namespacePodSecurity`), ai-helm-values `deps/librechat-code-interpreter/`, ADR-0122,
+`docs/patterns/self-hosted-code-interpreter.md`.
+
+- **What**: the open-source `clickhouse/code-interpreter` ("codeapi") behind LibreChat's `execute_code`. Upstream
+  publishes no images → built by the **`ADORSYS-GIS/code-interpreter`** fork, `ghcr.io/adorsys-gis/code-interpreter-*`,
+  pinned `sha-d3b0f05`.
+- **Deployment**: **flat** app (not a librechart child — the ApplicationSet forces one namespace), chart
+  `librechat-code-interpreter` from OCI, namespace **`librechat-sandbox`** with Pod Security **`privileged`**.
+  Sync options `CreateNamespace` + `ServerSideApply` only (no `Replace=true`: the PVC and Job have immutable fields).
+- **Components** (bjw-template, `fullnameOverride: codeapi`): `api` (:3112), `service-worker`, `sandbox-runner`
+  (:2000, NsJail; needs `SYS_ADMIN` + friends because no `/dev/kvm` for the microVM mode), `file-server` (:3000),
+  `tool-call-server` (:3033), `egress-gateway` (:3190), `package-init` (Job, populates the packages PVC).
+- **Sandbox limits** (sandbox-runner env): no networking (`SANDBOX_DISABLE_NETWORKING`; only the egress gateway
+  via a signed manifest), 15 s run / 10 s compile CPU+wall, 100 processes, 64 KB output, 4 concurrent jobs, per-job UIDs.
+- **Auth**: LibreChat mints a short-lived JWT per request (`CODEAPI_JWT_ENABLED=true`, `EdDSA`, kid
+  `lc-codeapi-2026-05`, private key from `librechat-codeapi-jwt`); the API verifies with the public key from
+  `codeapi-secrets` (ESO). Static API keys are rejected outside the service's local mode.
+- **Shared infra**: redis-ha (job queue) and the `ssegning-k8s-state` bucket (files). A `CiliumNetworkPolicy`
+  (deps overlay) lets only `file-server` reach `*.your-objectstorage.com:443`.
+- **Constraints**: `codeapi` PVC is 10Gi RWO on `hcloud-volumes` ⇒ sandbox-runner and service-worker pinned to 1
+  replica. Images run as root (no `USER` in the fork's Dockerfiles) — tracked follow-up.
+
+---
+
+## 19. MongoDB Backup
+
+- Flat app `mongodb-backup` (chart floats from OCI), namespace **`converse-chat`**, CronJob `0 2 * * *`, keeps 3
+  successful + 3 failed Jobs; an `exporter` init container dumps
+  `mongodb://librechat-app-db-0.librechat-app-db-headless.converse.svc.cluster.local:27017`, the main container uploads
+  to `https://nbg1.your-objectstorage.com`.
+- Needs its **own** `librechat-s3-config` in `converse-chat` (Secrets are namespace-scoped) — provided by the deps
+  overlay `environments/prod/deps/mongodb-backup`. Before that existed (until 2026-08-02) every run failed with
+  `CreateContainerConfigError`.
+- Live: last three runs Complete in ~17–19 s.
+
+---
+
+## 20. Live State Snapshot (2026-10-05)
+
+| Object | State |
+|---|---|
+| `deploy/librechat-app` | 2/2, image `ghcr.io/danny-avila/librechat:v0.8.7`, pods on worker-1 and worker-3 |
+| `sts/librechat-app-db` | 1/1, `mongo:8.2.6`, worker-3 |
+| `sts/librechat-search` | 1/1, `getmeili/meilisearch:v1.35.0` |
+| `hpa/librechat-app` | 1–4, current 2, CPU 0%/70%, memory 52%/80% |
+| PDBs | `librechat-app` (1 allowed disruption), `librechat-app-db-pdb` (0 allowed) |
+| Ingresses | `librechat-app`, `librechat-kivoyo-redirect`, `models-opencode-wellknown` |
+| ExternalSecrets | 13 × `SecretSynced` |
+| `cm/librechat-app-config-rollout` | `generation: "14"` |
+| `librechat-sandbox` | 6 Deployments Running + `package-init` Completed, PVC `codeapi` 10Gi Bound |
+| `converse-chat` | CronJob `mongodb-backup`, last 3 Jobs Complete |
+| Log findings | `[GitHubSkillSync] … skills/governance/SKILL.md contains invalid YAML frontmatter` (hourly — unquoted `description:` containing `: `); `redis client error: Socket closed unexpectedly` (~hourly, auto-reconnects) |
+
