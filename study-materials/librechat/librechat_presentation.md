@@ -1,6 +1,6 @@
 # LibreChat — Complete Presentation Guide
 
-> **File to open**: `diagrams/librechat.drawio` (11 pages — use the page tabs at the bottom).
+> **File to open**: `diagrams/librechat.drawio` (12 pages — use the page tabs at the bottom).
 > **Verified**: 2026-10-05 against `ai-helm@main`, `ai-helm-values@main` and the live `home-remote` cluster.
 > Deeper material: [`librechat-deep-dive.md`](librechat-deep-dive.md) (concepts + labs + quiz) ·
 > [`guide.md`](guide.md) (line-by-line reference) · [`presentation-speaker-notes.md`](presentation-speaker-notes.md) (script).
@@ -22,6 +22,7 @@
 | 9 | Page 9 | Code Interpreter — where user code runs, in a throwaway jail in `librechat-sandbox` |
 | 10 | Page 10 | Per-User Identity — how one shared key still gives per-user limits |
 | 11 | Page 11 | Full Request Flow — browser to model response, everything together |
+| 12 | Page 12 | GitHub MCP tools — connect GitHub once, then let the AI act on GitHub as you |
 
 ---
 

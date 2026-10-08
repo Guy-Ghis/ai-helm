@@ -1,6 +1,6 @@
 # LibreChat — Presenter's Speaker Notes
 
-> **File to open**: `diagrams/librechat.drawio` (11 pages).
+> **File to open**: `diagrams/librechat.drawio` (12 pages).
 > This document gives you the words to say for each page, in order. Facts verified 2026-10-05 —
 > see [`librechat-deep-dive.md`](librechat-deep-dive.md) for sources and hands-on labs.
 > **Tip**: run labs I1 and I6 from the deep dive right before presenting so you can quote live numbers.
@@ -354,6 +354,48 @@ its own namespace.
 
 > "So: one key to authenticate, but per-user limits and per-user cost dashboards. LibreChat's own balance system
 > is turned off — the gateway is the single place that counts."
+
+---
+
+## Page 12 — GitHub MCP tools
+
+### What this diagram shows
+How a persona like Repo Concierge can read and act on GitHub for a user — first the one-time connect (green band),
+then a normal chat that uses a GitHub tool (blue band).
+
+### Band A — connect GitHub (once per user, per GitHub server)
+> "We plug in GitHub's official MCP server — five slices of it: issues, projects, pull requests, repos and docs
+> search. Each acts on GitHub as **the user**, so each user must connect their own GitHub account first.
+>
+> The user opens a GitHub persona; LibreChat sees there's no GitHub token yet and shows a 'connect' link (steps 1–2).
+> The user logs in on github.com and approves the access (3). GitHub sends the browser back to LibreChat with a
+> one-time code (4–5). LibreChat swaps that code, plus our GitHub app's client secret, for the user's GitHub token
+> (6–7). It encrypts the token and stores it in MongoDB under that user (8). Then it connects to GitHub's MCP server
+> with that token and asks which tools exist (9–10)."
+
+### Band B — use it
+> "Now the user asks 'list my open PRs' (11). LibreChat sends the message **and the list of GitHub tools** to the
+> model through our AI gateway (12). The model doesn't call GitHub itself — it answers 'please run
+> list_pull_requests' (13). LibreChat runs that tool against GitHub's MCP server with the user's token (14) and gets
+> the result back (15). It hands the result to the model, which writes the answer (16), streamed to the user (17)."
+
+### Points to stress (the two boxes at the bottom)
+> "Three facts: the tools can only do what the user could do on github.com; each of the five servers is connected
+> separately; and the GitHub traffic goes straight from LibreChat to GitHub — only the model calls go through our
+> gateway.
+>
+> Two cautions: write tools are switched on — we don't use GitHub's read-only mode — so the personas are told to ask
+> before commenting, labelling or merging. And the access requested is very broad, including deleting repos and
+> organisation admin — a hardening item."
+
+### Likely questions
+**Q: Where do the GitHub client id and secret come from?** From Secret `librechat-mcp-github` (ESO), injected as
+`GITHUB_MCP_CLIENT_ID` / `GITHUB_MCP_SECRET_ID` and referenced in `librechat.yaml`.
+
+**Q: Can another user use my GitHub token?** No — tokens are stored per user and each user gets their own MCP connection.
+
+**Q: Where is this configured?** `ai-helm-values` `librechat-app.yaml` → `config.mcpServers.github_*`
+(URL `https://api.githubcopilot.com/mcp/x/<toolset>`, callback `https://ai.camer.digital/api/mcp/<server>/oauth/callback`).
 
 ---
 
